@@ -187,7 +187,7 @@ class DocxMustache
         }
     }
 
-    protected function ImageReplacerFetchReplaceableImages(&$main_file, $ns)
+    protected function FetchReplaceableImages(&$main_file, $ns)
     {
         //set up basic arrays to keep track of imgs
         $imgs = array();
@@ -343,7 +343,7 @@ class DocxMustache
         //get all namespaces of the document
         $ns = $main_file->getNamespaces(true);
 
-        $replaceableImage = $this->ImageReplacerFetchReplaceableImages($main_file, $ns);
+        $replaceableImage = $this->FetchReplaceableImages($main_file, $ns);
         $imgs = $replaceableImage['imgs'];
         $imgs_replaced = $replaceableImage['imgs_replaced'];
 
