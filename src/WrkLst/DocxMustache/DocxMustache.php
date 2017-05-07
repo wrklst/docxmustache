@@ -176,7 +176,7 @@ class DocxMustache
                 $this->zipper->add($this->storagePath($this->local_path.'[Content_Types].xml'));
             } else
             {
-                throw new Exception('canot generate xml for [Content_Types].xml.');
+                throw new Exception('Cannot generate xml for [Content_Types].xml.');
             }
         }
     }
@@ -340,7 +340,7 @@ class DocxMustache
             $this->zipper->folder('word/_rels')->add($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
         } else
         {
-            throw new Exception('canot generate xml for word/_rels/document.xml.rels.');
+            throw new Exception('Cannot generate xml for word/_rels/document.xml.rels.');
         }
 
         if($main_file_xml = $main_file->asXML())
@@ -348,7 +348,7 @@ class DocxMustache
             $this->word_doc = $main_file_xml;
         } else
         {
-            throw new Exception('canot generate xml for word/document.xml.');
+            throw new Exception('Cannot generate xml for word/document.xml.');
         }
     }
 
