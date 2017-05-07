@@ -131,8 +131,8 @@ class DocxMustache
         //this is necessary, as word might produce unnecesary xml tage inbetween curly backets.
         return preg_replace_callback(
             '/{{(.*?)}}/',
-            function($treffer) {
-                return strip_tags($treffer[0]);
+            function($match) {
+                return strip_tags($match[0]);
             },
             $content
         );
