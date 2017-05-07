@@ -27,7 +27,10 @@ class DocxMoustache
         $this->storageDisk = 'local';
         $this->storagePathPrefix = 'app/';
         $this->imageManipulation = '&w=1800';
+    }
 
+    public function execute()
+    {
         $this->copyTmplate();
         $this->readTeamplate();
     }
