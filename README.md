@@ -3,6 +3,9 @@
 
 Docx template manipulation class for Laravel 5.4, based on moustache templating language. This class is still under heavy development and works more like proof of concept at the moment. Things will change quickly and might break things.
 
+![Template Example](https://github.com/wrklst/docxmoustache/raw/master/example/ExampleMoustacheTemplate.png)
+
+
 ## Why another openXML / docx template solution?
 There are plenty of solutions out there, many with commercial licenses and some free. For our particular purpose we did not need most of the features many of the libraries out there have – we simply needed a solution that would allow to replace values and iterate through an array as well as basic image placeholder replacing.
 
@@ -28,7 +31,7 @@ so the class knows not to escape the html before it is converted to openXML.
 The image needs to be a reachable URL with a image in a supported format. The url value needs to be placed into the alt text description field of the image.
 Images will be resampled to the constraints of the placeholder image.
 The Image value needs to be formated the with pseudo tags around, such as: 
-`[IMG-REPLACE]https://urldtoimg.com/img.jpg[/IMG-REPLACE]`
+`[IMG-REPLACE]http://placehold.it/350x150[/IMG-REPLACE]`
 
 ## Example
-Please also checkout the example int he example folder to get a basic understand of how to use this class.
+Please also checkout the example in the example folder to get a basic understand of how to use this class.
