@@ -257,7 +257,7 @@ class DocxMustache
         }
     }
 
-    protected function InsertImages(&$imgs, &$rels_file, &$main_file)
+    protected function InsertImages($ns, &$imgs, &$rels_file, &$main_file)
     {
         //define what images are allowed
         $allowed_imgs = array(
@@ -360,7 +360,7 @@ class DocxMustache
         //add jpg content type if not set
         $this->AddContentType('jpeg');
 
-        $this->InsertImages($imgs, $rels_file, $main_file);
+        $this->InsertImages($ns, $imgs, $rels_file, $main_file);
 
         if ($rels_file_xml = $rels_file->asXML())
         {
