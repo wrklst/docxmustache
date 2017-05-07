@@ -1,0 +1,412 @@
+<?PHP
+
+namespace WrkLst\DocxMoustache;
+
+use Exception;
+
+//Custom DOCX template class to change content based on moustache templating engine.
+class DocxMoustache
+{
+    public $items;
+    public $word_doc;
+    public $template_file_name;
+    public $template_file;
+    public $local_path;
+    public $zipper;
+    public $storageDisk;
+    public $storagePathPrefix;
+
+    public function __construct($items, $local_template_file)
+    {
+        $this->items = $items;
+        $this->template_file_name = basename($local_template_file);
+        $this->template_file = $local_template_file;
+        $this->word_doc = false;
+        $this->zipper = new \Chumper\Zipper\Zipper;
+        $this->storageDisk = 'local';
+        $this->storagePathPrefix = 'app/';
+
+        $this->copyTmplate();
+        $this->readTeamplate();
+    }
+
+    protected function storagePath($file)
+    {
+        return storage_path($file);
+    }
+
+    protected function log($msg)
+    {
+        //intro duce logging method here to check process
+    }
+
+    public function cleanUpTmpDirs()
+    {
+        $now = time();
+        $expires = ($now+(60*240));
+        $isExpired = ($now-(60*240));
+        $disk = \Storage::disk($this->storageDisk);
+        $all_dirs = $disk->directories($this->storagePathPrefix.'DocxMoustache');
+        foreach($all_dirs as $dir) {
+            //delete dirs older than 20min
+            if($disk->lastModified($dir)<$isExpired)
+            {
+                $disk->deleteDirectory($dir);
+            }
+        }
+    }
+
+    public function getTmpDir()
+    {
+        $this->cleanUpTmpDirs();
+        $path = $this->storagePathPrefix.'DocxMoustache/'.\Uuid::generate(4)->string.'/';
+        \File::makeDirectory($this->storagePath($path), 0775, true);
+        return $path;
+    }
+
+    public function copyTmplate()
+    {
+        $this->log('Get Copy of Template');
+        $this->local_path = $this->getTmpDir();
+        \Storage::disk($this->storageDisk)->copy($this->storagePathPrefix.$this->template_file, $this->local_path.$this->template_file_name);
+    }
+
+    public function readTeamplate()
+    {
+        $this->log('Analyze Template');
+        //get the main document out of the docx archive
+        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
+            ->extractTo($this->storagePath($this->local_path),array('word/document.xml'),\Chumper\Zipper\Zipper::WHITELIST);
+
+        //if the main document exists
+        if($this->word_doc = \Storage::disk($this->storageDisk)->read($this->local_path.'word/document.xml'))
+        {
+            $this->log('Merge Data into Template');
+            $this->word_doc = $this->MoustacheTagCleaner($this->word_doc);
+            $this->word_doc = $this->MoustacheRender($this->items, $this->word_doc);
+            $this->word_doc = $this->convertHtmlToOpenXML($this->word_doc);
+
+            $this->ImageReplacer();
+
+            $this->log('Compact Template with Data');
+            //store new content
+            \Storage::disk($this->storageDisk)->put($this->local_path.'word/document.xml', $this->word_doc);
+            //add new content to word doc
+            $this->zipper->folder('word')->add($this->storagePath($this->local_path.'word/document.xml'))->close();
+        }
+        else
+        {
+            throw new Exception('docx has no main xml doc.');
+        }
+    }
+
+    protected function MoustacheTagCleaner($content)
+    {
+        //kills all xml tags within curly moustache brackets
+        return preg_replace_callback(
+            '/{{(.*?)}}/',
+            function ($treffer) {
+                return strip_tags($treffer[0]);
+            },
+            $content
+        );
+    }
+
+    protected function MoustacheRender($items, $mustache_template)
+    {
+        $m = new \Mustache_Engine(array('escape' => function($value) {
+            if(str_replace('*[[DONOTESCAPE]]*','',$value)!=$value)
+                return str_replace('*[[DONOTESCAPE]]*','',$value);
+            return htmlspecialchars($value, ENT_COMPAT, 'UTF-8');
+        }));
+        return $m->render($mustache_template, $items);
+
+    }
+
+    protected function AddJpgImgContentTypeIfNotExists()
+    {
+        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
+            ->extractTo($this->storagePath($this->local_path),array('[Content_Types].xml'),\Chumper\Zipper\Zipper::WHITELIST);
+        $word_ct = \Storage::disk($this->storageDisk)->read($this->local_path.'[Content_Types].xml');
+        $ct_file = simplexml_load_file($this->storagePath($this->local_path.'[Content_Types].xml'));
+
+        $i = 0;
+        $jpeg_already_set = false;
+        foreach($ct_file as $ct)
+        {
+            if((string)$ct_file->Default[$i]['Extension']=="jpeg")
+                $jpeg_already_set = true;
+            $i++;
+        }
+
+        if(!$jpeg_already_set)
+        {
+            $sxe = $ct_file->addChild('Default');
+            $sxe->addAttribute('Extension', 'jpeg');
+            $sxe->addAttribute('ContentType', 'image/jpeg');
+        }
+
+        if(!$jpeg_already_set)
+        {
+            \Storage::disk($this->storageDisk)->put($this->local_path.'[Content_Types].xml', $ct_file->asXML());
+            $this->zipper->add($this->storagePath($this->local_path.'[Content_Types].xml'));
+        }
+    }
+
+    protected function ImageReplacer()
+    {
+        $this->log('Merge Images into Template');
+        /*
+        This function is producing parsing errors for the word doc.
+        check what process exactly is doing this and how it can be prevented.
+        */
+        $main_file = simplexml_load_string($this->word_doc);
+        $ns = $main_file->getNamespaces(true);
+        $imgs = array();
+        $imgs_replaced = array(); // so they can later be removed from media and relation file.
+        $newIdCounter = 1;
+        foreach($main_file->xpath('//w:drawing') as $k=>$drawing)
+        {
+            $ueid = "wrklstId".$newIdCounter;
+            $wasId = (string)$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])["embed"];
+            $imgs_replaced[$wasId] = $wasId;
+            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])["embed"] = $ueid;
+
+            $cx = (int)$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()["cx"];
+            $cy = (int)$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()["cy"];
+
+            $img_url = $this->analyseImgUrlString((string)$drawing->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()["descr"]);
+            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()["descr"] = $img_url["rest"];
+
+            //check https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/
+            // for EMUs calculation
+            /*
+            295px @72 dpi = 1530350 EMUs = Multiplier for 72dpi pixels 5187.627118644067797
+            413px @72 dpi = 2142490 EMUs = Multiplier for 72dpi pixels 5187.627118644067797
+
+            */
+            if(trim($img_url["url"]))
+            {
+                $imgs[] = array(
+                    "cx" => $cx,
+                    "cy" => $cy,
+                    "width" => (int)($cx/5187.627118644067797),
+                    "height" => (int)($cy/5187.627118644067797),
+                    "wasId" => $wasId,
+                    "id" => $ueid,
+                    "url" => $img_url["url"],
+                );
+            }
+
+            //dd($imgs);
+
+            $newIdCounter++;
+        }
+
+        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
+            ->extractTo($this->storagePath($this->local_path),array('word/_rels/document.xml.rels'),\Chumper\Zipper\Zipper::WHITELIST);
+        $word_rels = \Storage::disk($this->storageDisk)->read($this->local_path.'word/_rels/document.xml.rels');
+
+        $rels_file = simplexml_load_file($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
+
+        $allowed_imgs = array(
+            'image/gif' => '.gif',
+            'image/jpeg' => '.jpeg',
+            'image/png' => '.png',
+            'image/bmp' => '.bmp',
+        );
+
+        foreach($imgs_replaced as $img_replaced)
+        {
+            $i=0;
+            foreach($rels_file as $rel)
+            {
+                if((string)$rel->attributes()['Id']==$img_replaced)
+                {
+                    $this->zipper->remove('word/'.(string)$rel->attributes()['Target']);
+                    unset($rels_file->Relationship[$i]);
+                }
+                $i++;
+            }
+        }
+
+        $this->AddJpgImgContentTypeIfNotExists();
+
+        foreach($imgs as $k=>$img)
+        {
+            if($img['url'])
+            {
+                //get file type of img and test it against supported imgs
+                if($img_file_handle = fopen($img['url'].'&w=1800', "rb"))
+                {
+                    $img_data = stream_get_contents($img_file_handle);
+                    fclose($img_file_handle);
+                    $fi = new \finfo(FILEINFO_MIME);
+
+                    $image_mime = strstr($fi->buffer($img_data),';',true);
+                    //dd($image_mime);
+                    if(isset($allowed_imgs[$image_mime]))
+                    {
+                        $imgs[$k]['img_file_src'] = str_replace("wrklstId","wrklst_image",$img['id']).$allowed_imgs[$image_mime];
+                        $imgs[$k]['img_file_dest'] = str_replace("wrklstId","wrklst_image",$img['id']).'.jpeg';
+
+                        \Storage::disk($this->storageDisk)->put($this->local_path.'word/media/'.$imgs[$k]['img_file_src'], $img_data);
+
+                        //reworkd img to new size and png format
+                        $img_rework = \Image::make($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_src']));
+                        $w = $img['width'];
+                        $h = $img['height'];
+                        if($w>$h)
+                            $h = null;
+                        else
+                            $w = null;
+                        $img_rework->resize($w, $h, function ($constraint) {
+                            $constraint->aspectRatio();
+                            $constraint->upsize();
+                        });
+                        $new_height = $img_rework->height();
+                        $new_width = $img_rework->width();
+                        $img_rework->save($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+
+                        $this->zipper->folder('word/media')->add($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+
+                        $sxe = $rels_file->addChild('Relationship');
+                        $sxe->addAttribute('Id', $img['id']);
+                        $sxe->addAttribute('Type', "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image");
+                        $sxe->addAttribute('Target', "media/".$imgs[$k]['img_file_dest']);
+
+                        //update height and width of image in document.xml
+                        $new_height_emus = (int)($new_height*5187.627118644067797);
+                        $new_width_emus = (int)($new_width*5187.627118644067797);
+                        foreach($main_file->xpath('//w:drawing') as $k=>$drawing)
+                        {
+                            if($img['id'] == $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])["embed"])
+                            {
+                                $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()["cx"] = $new_width_emus;
+                                $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()["cy"] = $new_height_emus;
+                                //the following also changes the contraints of the container for the img, probably not whanted, as this will make images larger than the constraints of the placeholder
+                                //$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cx"] = $new_width_emus;
+                                //$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cy"] = $new_height_emus;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        \Storage::disk($this->storageDisk)->put($this->local_path.'word/_rels/document.xml.rels', $rels_file->asXML());
+        $this->zipper->folder('word/_rels')->add($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
+
+        $this->word_doc = $main_file->asXML();
+    }
+
+    protected function analyseImgUrlString($string)
+    {
+        $start = "[IMG-REPLACE]";
+        $end = "[/IMG-REPLACE]";
+        $string = ' ' . $string;
+        $ini = strpos($string, $start);
+        if ($ini == 0)
+        {
+            $url = '';
+            $rest = $string;
+        }
+        else
+        {
+            $ini += strlen($start);
+            $len = ((strpos($string, $end, $ini))-$ini);
+            $url = substr($string, $ini, $len);
+
+            $ini = strpos($string, $start);
+            $len = strpos($string, $end, $ini+strlen($start))+strlen($end);
+            $rest = substr($string, 0, $ini).substr($string, $len);
+        }
+        return array(
+            "url" => $url,
+            "rest" => $rest,
+        );
+    }
+
+    protected function convertHtmlToOpenXMLTag($value, $tag="b")
+    {
+        $value_array = array();
+        $run_again = false;
+        //$bo = "&lt;";
+        //$bc = "&gt;";
+        $bo = "<";
+        $bc = ">";
+
+        //get first BOLD
+        $tag_open_values = explode($bo.$tag.$bc, $value, 2);
+
+        if(count($tag_open_values)>1)
+        {
+            //save everything before the bold and close it
+            $value_array[] = $tag_open_values[0];
+            $value_array[] = '</w:t></w:r>';
+
+            //define styling parameters
+            $wrPr_open = strrpos($tag_open_values[0],'<w:rPr>');
+            $wrPr_close = strrpos($tag_open_values[0],'</w:rPr>',$wrPr_open);
+            $neutral_style = '<w:r><w:rPr>'.substr($tag_open_values[0],($wrPr_open+7),($wrPr_close-($wrPr_open+7))).'</w:rPr><w:t>';
+            $tagged_style = '<w:r><w:rPr><w:'.$tag.'/>'.substr($tag_open_values[0],($wrPr_open+7),($wrPr_close-($wrPr_open+7))).'</w:rPr><w:t>';
+
+            //open new text run and make it bold, include previous styling
+            $value_array[] = $tagged_style;
+            //get everything before bold close and after
+            $tag_close_values = explode($bo.'/'.$tag.$bc, $tag_open_values[1], 2);
+            //add bold text
+            $value_array[] = $tag_close_values[0];
+            //close bold run
+            $value_array[] = '</w:t></w:r>';
+            //open run for after bold
+            $value_array[] = $neutral_style;
+            $value_array[] = $tag_close_values[1];
+
+            $run_again = true;
+        }
+        else {
+            $value_array[] = $tag_open_values[0];
+        }
+
+        $value = implode('',$value_array);
+
+        if($run_again)
+            $value = $this->convertHtmlToOpenXMLTag($value,$tag);
+
+        return $value;
+    }
+
+    protected function convertHtmlToOpenXML($value)
+    {
+        $line_breaks = array("&lt;br /&gt;","&lt;br/&gt;","&lt;br&gt;");
+        $line_breaks = array("<br />","<br/>","<br>");
+        $value = str_replace($line_breaks,'<w:br/>',$value);
+
+        $value = $this->convertHtmlToOpenXMLTag($value, "b");
+        $value = $this->convertHtmlToOpenXMLTag($value, "i");
+        $value = $this->convertHtmlToOpenXMLTag($value, "u");
+
+        return $value;
+    }
+
+    public function saveAsPdf()
+    {
+        $this->log('Converting DOCX to PDF');
+        //convert to pdf with libre office
+        $command = "soffice --headless --convert-to pdf ".$this->storagePath($this->local_path.$this->template_file_name).' --outdir '.$this->storagePath($this->local_path);
+        $process = new \Symfony\Component\Process\Process($command);
+        $process->start();
+        while ($process->isRunning()) {}
+        // executes after the command finishes
+        if (!$process->isSuccessful()) {
+            throw new \Symfony\Component\Process\Exception\ProcessFailedException($process);
+        }
+        else
+        {
+            $path_parts = pathinfo($this->storagePath($this->local_path.$this->template_file_name));
+            return $this->storagePath($this->local_path.$path_parts['filename'].'pdf');
+        }
+    }
+}
