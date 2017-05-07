@@ -24,9 +24,15 @@ class DocxMoustache
         $this->template_file = $local_template_file;
         $this->word_doc = false;
         $this->zipper = new \Chumper\Zipper\Zipper;
+
+        //name of disk for storage
         $this->storageDisk = 'local';
+
+        //prefix within your storage path
         $this->storagePathPrefix = 'app/';
-        $this->imageManipulation = '&w=1800';
+
+        //if you use img urls that support manipulation via parameter
+        $this->imageManipulation = ''; //'&w=1800';
     }
 
     public function execute()
