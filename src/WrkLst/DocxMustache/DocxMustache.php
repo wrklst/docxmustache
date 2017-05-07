@@ -3,6 +3,7 @@
 namespace WrkLst\DocxMustache;
 
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 //Custom DOCX template class to change content based on mustache templating engine.
 class DocxMustache
@@ -16,6 +17,7 @@ class DocxMustache
     public $storagePathPrefix;
     public $zipper;
     public $imageManipulation;
+    public $verbose;
 
     public function __construct($items, $local_template_file)
     {
@@ -33,6 +35,8 @@ class DocxMustache
 
         //if you use img urls that support manipulation via parameter
         $this->imageManipulation = ''; //'&w=1800';
+
+        $this->verbose = false;
     }
 
     public function execute()
@@ -56,6 +60,8 @@ class DocxMustache
     {
         //introduce logging method here to keep track of process
         // can be overwritten in extended class to log with custom preocess logger
+        if($this->verbose)
+            Log::error($msg);
     }
 
     public function cleanUpTmpDirs()
@@ -143,7 +149,7 @@ class DocxMustache
 
     }
 
-    protected function AddJpgImgContentTypeIfNotExists()
+    protected function AddContentType($imageCt="jpeg")
     {
         //get content type file from archive
         $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
@@ -154,21 +160,21 @@ class DocxMustache
 
         //check if content type for jpg has been set
         $i = 0;
-        $jpeg_already_set = false;
+        $ct_already_set = false;
         foreach ($ct_file as $ct)
         {
-            if ((string) $ct_file->Default[$i]['Extension'] == "jpeg")
-                $jpeg_already_set = true;
+            if ((string) $ct_file->Default[$i]['Extension'] == $imageCt)
+                $ct_already_set = true;
             $i++;
         }
 
         //if content type for jpg has not been set, add it to xml
         // and save xml to file and add it to the archive
-        if (!$jpeg_already_set)
+        if (!$ct_already_set)
         {
             $sxe = $ct_file->addChild('Default');
-            $sxe->addAttribute('Extension', 'jpeg');
-            $sxe->addAttribute('ContentType', 'image/jpeg');
+            $sxe->addAttribute('Extension', $imageCt);
+            $sxe->addAttribute('ContentType', 'image/'.$imageCt);
 
             if ($ct_file_xml = $ct_file->asXML())
             {
@@ -181,16 +187,8 @@ class DocxMustache
         }
     }
 
-    protected function ImageReplacer()
+    protected function ImageReplacerFetchReplaceableImages(&$main_file, $ns)
     {
-        $this->log('Merge Images into Template');
-
-        //load main doc xml
-        $main_file = simplexml_load_string($this->word_doc);
-
-        //get all namespaces of the document
-        $ns = $main_file->getNamespaces(true);
-
         //set up basic arrays to keep track of imgs
         $imgs = array();
         $imgs_replaced = array(); // so they can later be removed from media and relation file.
@@ -235,22 +233,14 @@ class DocxMustache
                 $newIdCounter++;
             }
         }
-
-        //get relation xml file for img relations
-        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
-            ->extractTo($this->storagePath($this->local_path), array('word/_rels/document.xml.rels'), \Chumper\Zipper\Zipper::WHITELIST);
-
-        //load img relations into xml
-        $rels_file = simplexml_load_file($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
-
-        //define what images are allowed
-        $allowed_imgs = array(
-            'image/gif' => '.gif',
-            'image/jpeg' => '.jpeg',
-            'image/png' => '.png',
-            'image/bmp' => '.bmp',
+        return array(
+            'imgs' => $imgs,
+            'imgs_replaced' => $imgs_replaced
         );
+    }
 
+    protected function RemoveReplaceImages($imgs_replaced, &$rels_file)
+    {
         //iterate through replaced images and clean rels files from them
         foreach ($imgs_replaced as $img_replaced)
         {
@@ -265,9 +255,17 @@ class DocxMustache
                 $i++;
             }
         }
+    }
 
-        //add jpg content type if not set
-        $this->AddJpgImgContentTypeIfNotExists();
+    protected function InsertImages(&$imgs, &$rels_file, &$main_file)
+    {
+        //define what images are allowed
+        $allowed_imgs = array(
+            'image/gif' => '.gif',
+            'image/jpeg' => '.jpeg',
+            'image/png' => '.png',
+            'image/bmp' => '.bmp',
+        );
 
         //iterate through replacable images
         foreach ($imgs as $k=>$img)
@@ -333,6 +331,36 @@ class DocxMustache
                 }
             }
         }
+    }
+
+    protected function ImageReplacer()
+    {
+        $this->log('Merge Images into Template');
+
+        //load main doc xml
+        $main_file = simplexml_load_string($this->word_doc);
+
+        //get all namespaces of the document
+        $ns = $main_file->getNamespaces(true);
+
+        $replaceableImage = $this->ImageReplacerFetchReplaceableImages($main_file, $ns);
+        $imgs = $replaceableImage['imgs'];
+        $imgs_replaced = $replaceableImage['imgs_replaced'];
+
+
+        //get relation xml file for img relations
+        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
+            ->extractTo($this->storagePath($this->local_path), array('word/_rels/document.xml.rels'), \Chumper\Zipper\Zipper::WHITELIST);
+
+        //load img relations into xml
+        $rels_file = simplexml_load_file($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
+
+        $this->RemoveReplaceImages($imgs_replaced, $rels_file);
+
+        //add jpg content type if not set
+        $this->AddContentType('jpeg');
+
+        $this->InsertImages($imgs, $rels_file, $main_file);
 
         if ($rels_file_xml = $rels_file->asXML())
         {
