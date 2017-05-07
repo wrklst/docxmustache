@@ -1,7 +1,7 @@
 {
     "name": "wrklst/docxmoustache",
     "description": "docx template manipulation class, based on moustache templating language",
-    "keywords": ["laravel", "docx", "template", "moustache"],
+    "keywords": ["laravel", "docx", "openxml", "template", "moustache", "php"],
     "require": {
         "php" : ">=5.3.0",
         "illuminate/support": "5.0.x|5.1.x|5.2.x|5.3.x|5.4.x",
