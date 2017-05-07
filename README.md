@@ -1,7 +1,7 @@
 DocxMoustache
 ===============
 
-Docx template manipulation class for Laravel 5.4, based on moustache templating language.
+Docx template manipulation class for Laravel 5.4, based on moustache templating language. This class is still under heavy development and works more like proof of concept at the moment. Things will change quickly and might break things.
 
 
 DOCX to PDF conversion
