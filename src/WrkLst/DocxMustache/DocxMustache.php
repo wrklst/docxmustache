@@ -60,7 +60,7 @@ class DocxMustache
     {
         //introduce logging method here to keep track of process
         // can be overwritten in extended class to log with custom preocess logger
-        if($this->verbose)
+        if ($this->verbose)
             Log::error($msg);
     }
 
@@ -141,15 +141,16 @@ class DocxMustache
     protected function MustacheRender($items, $mustache_template)
     {
         $m = new \Mustache_Engine(array('escape' => function($value) {
-            if (str_replace('*[[DONOTESCAPE]]*', '', $value) != $value)
-                return str_replace('*[[DONOTESCAPE]]*', '', $value);
+            if (str_replace('*[[DONOTESCAPE]]*', '', $value) != $value) {
+                            return str_replace('*[[DONOTESCAPE]]*', '', $value);
+            }
             return htmlspecialchars($value, ENT_COMPAT, 'UTF-8');
         }));
         return $m->render($mustache_template, $items);
 
     }
 
-    protected function AddContentType($imageCt="jpeg")
+    protected function AddContentType($imageCt = "jpeg")
     {
         //get content type file from archive
         $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
@@ -163,8 +164,9 @@ class DocxMustache
         $ct_already_set = false;
         foreach ($ct_file as $ct)
         {
-            if ((string) $ct_file->Default[$i]['Extension'] == $imageCt)
-                $ct_already_set = true;
+            if ((string) $ct_file->Default[$i]['Extension'] == $imageCt) {
+                            $ct_already_set = true;
+            }
             $i++;
         }
 
@@ -290,10 +292,11 @@ class DocxMustache
                     $img_rework = \Image::make($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_src']));
                     $w = $img['width'];
                     $h = $img['height'];
-                    if ($w > $h)
-                        $h = null;
-                    else
-                        $w = null;
+                    if ($w > $h) {
+                                            $h = null;
+                    } else {
+                                            $w = null;
+                    }
                     $img_rework->resize($w, $h, function($constraint) {
                         $constraint->aspectRatio();
                         $constraint->upsize();
