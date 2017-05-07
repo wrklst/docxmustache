@@ -49,6 +49,7 @@ class DocxMoustache
     protected function log($msg)
     {
         //introduce logging method here to keep track of process
+        // can be overwritten in extended class to log with custom preocess logger
     }
 
     public function cleanUpTmpDirs()
