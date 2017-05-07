@@ -170,7 +170,7 @@ class DocxMustache
             $sxe->addAttribute('Extension', 'jpeg');
             $sxe->addAttribute('ContentType', 'image/jpeg');
 
-            if($ct_file_xml = $ct_file->asXML())
+            if ($ct_file_xml = $ct_file->asXML())
             {
                 \Storage::disk($this->storageDisk)->put($this->local_path.'[Content_Types].xml', $ct_file_xml);
                 $this->zipper->add($this->storagePath($this->local_path.'[Content_Types].xml'));
@@ -334,7 +334,7 @@ class DocxMustache
             }
         }
 
-        if($rels_file_xml = $rels_file->asXML())
+        if ($rels_file_xml = $rels_file->asXML())
         {
             \Storage::disk($this->storageDisk)->put($this->local_path.'word/_rels/document.xml.rels', $rels_file_xml);
             $this->zipper->folder('word/_rels')->add($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
@@ -343,7 +343,7 @@ class DocxMustache
             throw new Exception('Cannot generate xml for word/_rels/document.xml.rels.');
         }
 
-        if($main_file_xml = $main_file->asXML())
+        if ($main_file_xml = $main_file->asXML())
         {
             $this->word_doc = $main_file_xml;
         } else
@@ -425,10 +425,10 @@ class DocxMustache
             $value_array[] = $tag_open_values[0];
         }
 
-        $value = implode('',$value_array);
+        $value = implode('', $value_array);
 
-        if($run_again) {
-                    $value = $this->convertHtmlToOpenXMLTag($value,$tag);
+        if ($run_again) {
+                    $value = $this->convertHtmlToOpenXMLTag($value, $tag);
         }
 
         return $value;
@@ -439,8 +439,8 @@ class DocxMustache
      */
     protected function convertHtmlToOpenXML($value)
     {
-        $line_breaks = array("&lt;br /&gt;","&lt;br/&gt;","&lt;br&gt;","<br />","<br/>","<br>");
-        $value = str_replace($line_breaks,'<w:br/>',$value);
+        $line_breaks = array("&lt;br /&gt;", "&lt;br/&gt;", "&lt;br&gt;", "<br />", "<br/>", "<br>");
+        $value = str_replace($line_breaks, '<w:br/>', $value);
 
         $value = $this->convertHtmlToOpenXMLTag($value, "b");
         $value = $this->convertHtmlToOpenXMLTag($value, "i");
