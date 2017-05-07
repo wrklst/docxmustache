@@ -96,8 +96,7 @@ class DocxMustache
             ->extractTo($this->storagePath($this->local_path), array('word/document.xml'), \Chumper\Zipper\Zipper::WHITELIST);
 
         //if the main document exists
-        if ($this->word_doc = \Storage::disk($this->storageDisk)
-            ->read($this->local_path.'word/document.xml'))
+        if ($this->word_doc = \Storage::disk($this->storageDisk)->get($this->local_path.'word/document.xml'))
         {
             $this->log('Merge Data into Template');
             $this->word_doc = $this->MustacheTagCleaner($this->word_doc);
