@@ -70,8 +70,8 @@ class DocxMustache
 
     public function getTmpDir()
     {
-        $this->cleanUpTmpDirs($template_file);
-        $path = $this->storagePathPrefix.'DocxMustache/'.uniqid($template_file).'/';
+        $this->cleanUpTmpDirs();
+        $path = $this->storagePathPrefix.'DocxMustache/'.uniqid($this->template_file).'/';
         \File::makeDirectory($this->storagePath($path), 0775, true);
         return $path;
     }
@@ -79,7 +79,7 @@ class DocxMustache
     public function copyTmplate()
     {
         $this->log('Get Copy of Template');
-        $this->local_path = $this->getTmpDir($this->template_file);
+        $this->local_path = $this->getTmpDir();
         \Storage::disk($this->storageDisk)->copy($this->storagePathPrefix.$this->template_file, $this->local_path.$this->template_file_name);
     }
 
