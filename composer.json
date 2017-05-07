@@ -1,17 +1,16 @@
 {
-    "name": "wrklst/docxmoustache",
-    "description": "docx template manipulation class, based on moustache templating language",
-    "keywords": ["laravel", "docx", "openxml", "template", "moustache", "php"],
+    "name": "wrklst/docxmustache",
+    "description": "docx template manipulation class, based on mustache templating language",
+    "keywords": ["laravel", "docx", "openxml", "template", "mustache", "php"],
     "require": {
         "php" : ">=5.3.0",
         "illuminate/support": "5.0.x|5.1.x|5.2.x|5.3.x|5.4.x",
         "illuminate/filesystem": "5.0.x|5.1.x|5.2.x|5.3.x|5.4.x",
         "chumper/zipper": "^1.0",
         "mustache/mustache": "^2.11",
-        "intervention/image": "^2.3",
-        "webpatser/laravel-uuid": "~2"
+        "intervention/image": "^2.3"
     },
-    "homepage" : "https://github.com/wrklst/docxmoustache",
+    "homepage" : "https://github.com/wrklst/docxmustache",
     "license": "MIT",
     "authors": [
         {
@@ -21,7 +20,7 @@
     ],
     "autoload" : {
 		"psr-0" : {
-			"WrkLst\\DocxMoustache" : "src/"
+			"WrkLst\\DocxMustache" : "src/"
 		}
 	},
     "minimum-stability": "dev"

@@ -1,11 +1,11 @@
 <?PHP
 
-namespace WrkLst\DocxMoustache;
+namespace WrkLst\DocxMustache;
 
 use Exception;
 
-//Custom DOCX template class to change content based on moustache templating engine.
-class DocxMoustache
+//Custom DOCX template class to change content based on mustache templating engine.
+class DocxMustache
 {
     public $items;
     public $word_doc;
@@ -58,7 +58,7 @@ class DocxMoustache
         $expires = ($now+(60*240));
         $isExpired = ($now-(60*240));
         $disk = \Storage::disk($this->storageDisk);
-        $all_dirs = $disk->directories($this->storagePathPrefix.'DocxMoustache');
+        $all_dirs = $disk->directories($this->storagePathPrefix.'DocxMustache');
         foreach($all_dirs as $dir) {
             //delete dirs older than 20min
             if($disk->lastModified($dir)<$isExpired)
@@ -70,8 +70,8 @@ class DocxMoustache
 
     public function getTmpDir()
     {
-        $this->cleanUpTmpDirs();
-        $path = $this->storagePathPrefix.'DocxMoustache/'.\Uuid::generate(4)->string.'/';
+        $this->cleanUpTmpDirs($template_file);
+        $path = $this->storagePathPrefix.'DocxMustache/'.uniqid($template_file).'/';
         \File::makeDirectory($this->storagePath($path), 0775, true);
         return $path;
     }
@@ -79,7 +79,7 @@ class DocxMoustache
     public function copyTmplate()
     {
         $this->log('Get Copy of Template');
-        $this->local_path = $this->getTmpDir();
+        $this->local_path = $this->getTmpDir($this->template_file);
         \Storage::disk($this->storageDisk)->copy($this->storagePathPrefix.$this->template_file, $this->local_path.$this->template_file_name);
     }
 
@@ -95,8 +95,8 @@ class DocxMoustache
             ->read($this->local_path.'word/document.xml'))
         {
             $this->log('Merge Data into Template');
-            $this->word_doc = $this->MoustacheTagCleaner($this->word_doc);
-            $this->word_doc = $this->MoustacheRender($this->items, $this->word_doc);
+            $this->word_doc = $this->MustacheTagCleaner($this->word_doc);
+            $this->word_doc = $this->MustacheRender($this->items, $this->word_doc);
             $this->word_doc = $this->convertHtmlToOpenXML($this->word_doc);
 
             $this->ImageReplacer();
@@ -116,9 +116,9 @@ class DocxMoustache
         }
     }
 
-    protected function MoustacheTagCleaner($content)
+    protected function MustacheTagCleaner($content)
     {
-        //kills all xml tags within curly moustache brackets
+        //kills all xml tags within curly mustache brackets
         //this is necessary, as word might produce unnecesary xml tage inbetween curly backets.
         return preg_replace_callback(
             '/{{(.*?)}}/',
@@ -129,7 +129,7 @@ class DocxMoustache
         );
     }
 
-    protected function MoustacheRender($items, $mustache_template)
+    protected function MustacheRender($items, $mustache_template)
     {
         $m = new \Mustache_Engine(array('escape' => function($value) {
             if(str_replace('*[[DONOTESCAPE]]*','',$value)!=$value)

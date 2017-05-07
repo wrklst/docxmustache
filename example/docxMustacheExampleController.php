@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
 
-class DocxMoustacheExampleController extends Controller
+class DocxMustacheExampleController extends Controller
 {
     public function index(Request $request)
     {
@@ -34,7 +34,7 @@ class DocxMoustacheExampleController extends Controller
         );
 
         //call class
-        $docx_creation = new \WrkLst\DocxMoustache\DocxMoustache(array('items'=>$data), $local_template_file);
+        $docx_creation = new \WrkLst\DocxMustache\DocxMustache(array('items'=>$data), $local_template_file);
 
         //optionally change some setting before the class gets executed
         $docx_creation->storageDisk = 'local';

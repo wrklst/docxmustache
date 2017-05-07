@@ -1,14 +1,14 @@
 <?php
 
-namespace WrkLst\DocxMoustache;
+namespace WrkLst\DocxMustache;
 
 use Illuminate\Support\Facades\Facade;
 
 /**
- * DocxMoustacheFacade
+ * DocxMustacheFacade
  *
  */
-class DocxMoustacheFacade extends Facade
+class DocxMustacheFacade extends Facade
 {
     /**
      * Get the registered name of the component.
@@ -17,6 +17,6 @@ class DocxMoustacheFacade extends Facade
      */
     protected static function getFacadeAccessor()
     {
-        return 'docxmoustache';
+        return 'docxmustache';
     }
 }
