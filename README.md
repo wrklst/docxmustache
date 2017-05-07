@@ -3,7 +3,7 @@
 
 Docx template manipulation class for Laravel 5.4, based on [mustache templating language](https://mustache.github.io). This class is still under heavy development and works more like proof of concept at the moment. Things will change quickly and might break things.
 
-![Template Example](https://github.com/wrklst/docxmustache/raw/master/example/ExampleMustacheTemplate.png)
+![Template Example in Word](https://github.com/wrklst/docxmustache/raw/master/example/ExampleMustacheTemplate.png)
 This package helps you to use docx files with mustache syntax as templates for richtly styled reporting templates. It can replace text and images and supports basic html styling (bold, itallic, underline).
 
 ## Installation
@@ -45,7 +45,7 @@ The package is dependent on several Laravel specific functions. It could easily 
 
 * [mustache/mustache](https://packagist.org/packages/mustache/mustache)
 * [chumper/zipper](https://github.com/Chumper/Zipper)
-* [intervention/image](http://image.intervention.io) (requires adding [provider and alias](http://image.intervention.io/getting_started/installation#laravel) to your app config as well as gd or imagick, [please check the image intervention webpage fro details](http://image.intervention.io/getting_started/installation#laravel))
+* [intervention/image](http://image.intervention.io) (requires adding [provider and alias](http://image.intervention.io/getting_started/installation#laravel) to your app config as well as gd or imagick, [please check the image intervention webpage for details](http://image.intervention.io/getting_started/installation#laravel))
 
 Laravel specific dependencies (only relevant if ported into non Laravel environment):
 
