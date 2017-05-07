@@ -61,7 +61,6 @@ class DocxMustache
     public function cleanUpTmpDirs()
     {
         $now = time();
-        $expires = ($now + (60 * 240));
         $isExpired = ($now - (60 * 240));
         $disk = \Storage::disk($this->storageDisk);
         $all_dirs = $disk->directories($this->storagePathPrefix.'DocxMustache');
@@ -151,10 +150,6 @@ class DocxMustache
         $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
             ->extractTo($this->storagePath($this->local_path), array('[Content_Types].xml'), \Chumper\Zipper\Zipper::WHITELIST);
 
-        //open content type file
-        $word_ct = \Storage::disk($this->storageDisk)
-            ->read($this->local_path.'[Content_Types].xml');
-
         // load content type file xml
         $ct_file = simplexml_load_file($this->storagePath($this->local_path.'[Content_Types].xml'));
 
@@ -176,8 +171,14 @@ class DocxMustache
             $sxe->addAttribute('Extension', 'jpeg');
             $sxe->addAttribute('ContentType', 'image/jpeg');
 
-            \Storage::disk($this->storageDisk)->put($this->local_path.'[Content_Types].xml', $ct_file->asXML());
-            $this->zipper->add($this->storagePath($this->local_path.'[Content_Types].xml'));
+            if($ct_file_xml = $ct_file->asXML())
+            {
+                \Storage::disk($this->storageDisk)->put($this->local_path.'[Content_Types].xml', $ct_file_xml);
+                $this->zipper->add($this->storagePath($this->local_path.'[Content_Types].xml'));
+            } else
+            {
+                throw new Exception('canot generate xml for [Content_Types].xml.');
+            }
         }
     }
 
@@ -239,7 +240,6 @@ class DocxMustache
         //get relation xml file for img relations
         $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
             ->extractTo($this->storagePath($this->local_path), array('word/_rels/document.xml.rels'), \Chumper\Zipper\Zipper::WHITELIST);
-        $word_rels = \Storage::disk($this->storageDisk)->read($this->local_path.'word/_rels/document.xml.rels');
 
         //load img relations into xml
         $rels_file = simplexml_load_file($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
@@ -322,9 +322,12 @@ class DocxMustache
                             $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()["cx"] = $new_width_emus;
                             $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()["cy"] = $new_height_emus;
 
-                            //the following also changes the contraints of the container for the img, probably not whanted, as this will make images larger than the constraints of the placeholder
-                            //$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cx"] = $new_width_emus;
-                            //$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cy"] = $new_height_emus;
+                            //the following also changes the contraints of the container for the img.
+                            // probably not wanted, as this will make images larger than the constraints of the placeholder
+                            /*
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cx"] = $new_width_emus;
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cy"] = $new_height_emus;
+                            */
                             break;
                         }
                     }
@@ -332,10 +335,22 @@ class DocxMustache
             }
         }
 
-        \Storage::disk($this->storageDisk)->put($this->local_path.'word/_rels/document.xml.rels', $rels_file->asXML());
-        $this->zipper->folder('word/_rels')->add($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
+        if($rels_file_xml = $rels_file->asXML())
+        {
+            \Storage::disk($this->storageDisk)->put($this->local_path.'word/_rels/document.xml.rels', $rels_file_xml);
+            $this->zipper->folder('word/_rels')->add($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
+        } else
+        {
+            throw new Exception('canot generate xml for word/_rels/document.xml.rels.');
+        }
 
-        $this->word_doc = $main_file->asXML();
+        if($main_file_xml = $main_file->asXML())
+        {
+            $this->word_doc = $main_file_xml;
+        } else
+        {
+            throw new Exception('canot generate xml for word/document.xml.');
+        }
     }
 
     /**
@@ -371,8 +386,11 @@ class DocxMustache
     {
         $value_array = array();
         $run_again = false;
-        //$bo = "&lt;";
-        //$bc = "&gt;";
+        //this could be used instead if html was already escaped
+        /*
+        $bo = "&lt;";
+        $bc = "&gt;";
+        */
         $bo = "<";
         $bc = ">";
 
@@ -422,8 +440,7 @@ class DocxMustache
      */
     protected function convertHtmlToOpenXML($value)
     {
-        $line_breaks = array("&lt;br /&gt;","&lt;br/&gt;","&lt;br&gt;");
-        $line_breaks = array("<br />","<br/>","<br>");
+        $line_breaks = array("&lt;br /&gt;","&lt;br/&gt;","&lt;br&gt;","<br />","<br/>","<br>");
         $value = str_replace($line_breaks,'<w:br/>',$value);
 
         $value = $this->convertHtmlToOpenXMLTag($value, "b");
@@ -440,7 +457,9 @@ class DocxMustache
         $command = "soffice --headless --convert-to pdf ".$this->storagePath($this->local_path.$this->template_file_name).' --outdir '.$this->storagePath($this->local_path);
         $process = new \Symfony\Component\Process\Process($command);
         $process->start();
-        while ($process->isRunning()) {}
+        while ($process->isRunning()) {
+            //wait until process is ready
+        }
         // executes after the command finishes
         if (!$process->isSuccessful()) {
             throw new \Symfony\Component\Process\Exception\ProcessFailedException($process);
