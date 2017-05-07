@@ -1,5 +1,6 @@
-# DocxMustache for Laravel 5.4
+# DocxMustache *for Laravel 5.4*
 
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/build-status/master)
 
 Docx template manipulation class for Laravel 5.4, based on [mustache templating language](https://mustache.github.io). This class is still under heavy development and works more like proof of concept at the moment. Things will change quickly and might break things.
 
