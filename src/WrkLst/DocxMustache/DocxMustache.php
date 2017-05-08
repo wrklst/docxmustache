@@ -139,7 +139,7 @@ class DocxMustache
     {
         $this->log('Analyze Template');
         //get the main document out of the docx archive
-        $this->word_doc = ReadOpenXmlFile('word/document.xml','file');
+        $this->word_doc = $this->ReadOpenXmlFile('word/document.xml','file');
 
         $this->log('Merge Data into Template');
 
