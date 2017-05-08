@@ -94,35 +94,66 @@ class DocxMustache
         \Storage::disk($this->storageDisk)->copy($this->storagePathPrefix.$this->template_file, $this->local_path.$this->template_file_name);
     }
 
+    /**
+     * @param string $value
+     */
+    protected function exctractOpenXmlFile($file)
+    {
+        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
+            ->extractTo($this->storagePath($this->local_path), array($file), \Chumper\Zipper\Zipper::WHITELIST);
+    }
+
+    /**
+     * @param string $value
+     */
+    protected function readOpenXmlFile($file)
+    {
+        $this->exctractOpenXmlFile($file);
+
+        if ($file_contents = \Storage::disk($this->storageDisk)->get($this->local_path.$file))
+        {
+            return $file_contents;
+        } else
+        {
+            throw new Exception('could not read');
+        }
+    }
+
+    /**
+     * @param string $value
+     */
+    protected function readOpenXmlObject($file)
+    {
+        $this->exctractOpenXmlFile($file);
+
+        return simplexml_load_file($this->storagePath($this->local_path.$file));
+    }
+
+    protected function saveOpenXmlFile($file,$folder,$content)
+    {
+        \Storage::disk($this->storageDisk)
+            ->put($this->local_path.$file, $content);
+        //add new content to word doc
+        $this->zipper->folder($folder)
+            ->add($this->storagePath($this->local_path.$file));
+    }
+
     public function readTeamplate()
     {
         $this->log('Analyze Template');
         //get the main document out of the docx archive
-        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
-            ->extractTo($this->storagePath($this->local_path), array('word/document.xml'), \Chumper\Zipper\Zipper::WHITELIST);
+        $this->word_doc = readOpenXmlFile('word/document.xml');
 
-        //if the main document exists
-        if ($this->word_doc = \Storage::disk($this->storageDisk)->get($this->local_path.'word/document.xml'))
-        {
-            $this->log('Merge Data into Template');
-            $this->word_doc = $this->MustacheTagCleaner($this->word_doc);
-            $this->word_doc = $this->MustacheRender($this->items, $this->word_doc);
-            $this->word_doc = $this->convertHtmlToOpenXML($this->word_doc);
+        $this->log('Merge Data into Template');
+        $this->word_doc = $this->MustacheRender($this->items, $this->word_doc);
+        $this->word_doc = $this->convertHtmlToOpenXML($this->word_doc);
 
-            $this->ImageReplacer();
+        $this->ImageReplacer();
 
-            $this->log('Compact Template with Data');
-            //store new content
-            \Storage::disk($this->storageDisk)
-                ->put($this->local_path.'word/document.xml', $this->word_doc);
-            //add new content to word doc
-            $this->zipper->folder('word')
-                ->add($this->storagePath($this->local_path.'word/document.xml'))
-                ->close();
-        } else
-        {
-            throw new Exception('docx has no main xml doc.');
-        }
+        $this->log('Compact Template with Data');
+
+        $this->saveOpenXmlFile('word/document.xml','word',$this->word_doc);
+        $this->zipper->close();
     }
 
     protected function MustacheTagCleaner($content)
@@ -138,8 +169,11 @@ class DocxMustache
         );
     }
 
-    protected function MustacheRender($items, $mustache_template)
+    protected function MustacheRender($items, $mustache_template, $clean_tags = true)
     {
+        if($clean_tags)
+            $mustache_template = $this->MustacheTagCleaner($mustache_template);
+
         $m = new \Mustache_Engine(array('escape' => function($value) {
             if (str_replace('*[[DONOTESCAPE]]*', '', $value) != $value) {
                             return str_replace('*[[DONOTESCAPE]]*', '', $value);
@@ -147,17 +181,11 @@ class DocxMustache
             return htmlspecialchars($value, ENT_COMPAT, 'UTF-8');
         }));
         return $m->render($mustache_template, $items);
-
     }
 
     protected function AddContentType($imageCt = "jpeg")
     {
-        //get content type file from archive
-        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
-            ->extractTo($this->storagePath($this->local_path), array('[Content_Types].xml'), \Chumper\Zipper\Zipper::WHITELIST);
-
-        // load content type file xml
-        $ct_file = simplexml_load_file($this->storagePath($this->local_path.'[Content_Types].xml'));
+        $ct_file = $this->readOpenXmlObject('[Content_Types].xml');
 
         //check if content type for jpg has been set
         $i = 0;
@@ -180,8 +208,7 @@ class DocxMustache
 
             if ($ct_file_xml = $ct_file->asXML())
             {
-                \Storage::disk($this->storageDisk)->put($this->local_path.'[Content_Types].xml', $ct_file_xml);
-                $this->zipper->add($this->storagePath($this->local_path.'[Content_Types].xml'));
+                $this->saveOpenXmlFile('[Content_Types].xml',false,$ct_file_xml);
             } else
             {
                 throw new Exception('Cannot generate xml for [Content_Types].xml.');
@@ -259,77 +286,113 @@ class DocxMustache
         }
     }
 
-    protected function InsertImages($ns, &$imgs, &$rels_file, &$main_file)
+    protected function AllowedContentTypeImages()
     {
-        //define what images are allowed
-        $allowed_imgs = array(
+        return array(
             'image/gif' => '.gif',
             'image/jpeg' => '.jpeg',
             'image/png' => '.png',
             'image/bmp' => '.bmp',
         );
+    }
+
+    protected function GetImageFromUrl($url)
+    {
+        $allowed_imgs = $this->AllowedContentTypeImages();
+
+        if ($img_file_handle = fopen($url.$this->imageManipulation, "rb"))
+        {
+            $img_data = stream_get_contents($img_file_handle);
+            fclose($img_file_handle);
+            $fi = new \finfo(FILEINFO_MIME);
+
+            $image_mime = strstr($fi->buffer($img_data), ';', true);
+            //dd($image_mime);
+            if (isset($allowed_imgs[$image_mime]))
+            {
+                return array(
+                    'data' => $img_data,
+                    'mime' => $image_mime,
+                );
+            }
+        }
+        return false;
+    }
+
+    protected function ResampleImage($imgs, $k, $data)
+    {
+        \Storage::disk($this->storageDisk)->put($this->local_path.'word/media/'.$imgs[$k]['img_file_src'], $data);
+
+        //rework img to new size and jpg format
+        $img_rework = \Image::make($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_src']));
+        $w = $imgs[$k]['width'];
+        $h = $imgs[$k]['height'];
+        if ($w > $h) {
+            $h = null;
+        } else {
+            $w = null;
+        }
+        $img_rework->resize($w, $h, function($constraint) {
+            $constraint->aspectRatio();
+            $constraint->upsize();
+        });
+        $new_height = $img_rework->height();
+        $new_width = $img_rework->width();
+        $img_rework->save($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+
+        $this->zipper->folder('word/media')->add($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+
+        return array(
+            'height' => $new_height,
+            'width' => $new_width,
+        );
+    }
+
+    protected function InsertImages($ns, &$imgs, &$rels_file, &$main_file)
+    {
+        //define what images are allowed
+        $allowed_imgs = $this->AllowedContentTypeImages();
 
         //iterate through replacable images
         foreach ($imgs as $k=>$img)
         {
             //get file type of img and test it against supported imgs
-            if ($img_file_handle = fopen($img['url'].$this->imageManipulation, "rb"))
+            if($imgageData = $this->GetImageFromUrl($img['url']))
             {
-                $img_data = stream_get_contents($img_file_handle);
-                fclose($img_file_handle);
-                $fi = new \finfo(FILEINFO_MIME);
+                $imgs[$k]['img_file_src'] = str_replace("wrklstId", "wrklst_image", $img['id']).$allowed_imgs[$imgageData['mime']];
+                $imgs[$k]['img_file_dest'] = str_replace("wrklstId", "wrklst_image", $img['id']).'.jpeg';
 
-                $image_mime = strstr($fi->buffer($img_data), ';', true);
-                //dd($image_mime);
-                if (isset($allowed_imgs[$image_mime]))
+                $resampled_img = $this->ResampleImage($imgs, $k, $imgageData['data']);
+
+                $sxe = $rels_file->addChild('Relationship');
+                $sxe->addAttribute('Id', $img['id']);
+                $sxe->addAttribute('Type', "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image");
+                $sxe->addAttribute('Target', "media/".$imgs[$k]['img_file_dest']);
+
+                //update height and width of image in document.xml
+                $new_height_emus = (int) ($resampled_img['height'] * 5187.627118644067797);
+                $new_width_emus = (int) ($resampled_img['width'] * 5187.627118644067797);
+
+                foreach ($main_file->xpath('//w:drawing') as $k=>$drawing)
                 {
-                    $imgs[$k]['img_file_src'] = str_replace("wrklstId", "wrklst_image", $img['id']).$allowed_imgs[$image_mime];
-                    $imgs[$k]['img_file_dest'] = str_replace("wrklstId", "wrklst_image", $img['id']).'.jpeg';
-
-                    \Storage::disk($this->storageDisk)->put($this->local_path.'word/media/'.$imgs[$k]['img_file_src'], $img_data);
-
-                    //rework img to new size and jpg format
-                    $img_rework = \Image::make($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_src']));
-                    $w = $img['width'];
-                    $h = $img['height'];
-                    if ($w > $h) {
-                                            $h = null;
-                    } else {
-                                            $w = null;
-                    }
-                    $img_rework->resize($w, $h, function($constraint) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                    });
-                    $new_height = $img_rework->height();
-                    $new_width = $img_rework->width();
-                    $img_rework->save($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
-
-                    $this->zipper->folder('word/media')->add($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
-
-                    $sxe = $rels_file->addChild('Relationship');
-                    $sxe->addAttribute('Id', $img['id']);
-                    $sxe->addAttribute('Type', "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image");
-                    $sxe->addAttribute('Target', "media/".$imgs[$k]['img_file_dest']);
-
-                    //update height and width of image in document.xml
-                    $new_height_emus = (int) ($new_height * 5187.627118644067797);
-                    $new_width_emus = (int) ($new_width * 5187.627118644067797);
-                    foreach ($main_file->xpath('//w:drawing') as $k=>$drawing)
+                    if ($img['id'] == $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
+                        ->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])
+                        ->blip->attributes($ns['r'])["embed"])
                     {
-                        if ($img['id'] == $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])["embed"])
-                        {
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()["cx"] = $new_width_emus;
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()["cy"] = $new_height_emus;
+                        $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
+                            ->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])
+                            ->xfrm->ext->attributes()["cx"] = $new_width_emus;
+                        $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
+                            ->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])
+                            ->xfrm->ext->attributes()["cy"] = $new_height_emus;
 
-                            //the following also changes the contraints of the container for the img.
-                            // probably not wanted, as this will make images larger than the constraints of the placeholder
-                            /*
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cx"] = $new_width_emus;
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cy"] = $new_height_emus;
-                            */
-                            break;
-                        }
+                        //the following also changes the contraints of the container for the img.
+                        // probably not wanted, as this will make images larger than the constraints of the placeholder
+                        /*
+                        $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cx"] = $new_width_emus;
+                        $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cy"] = $new_height_emus;
+                        */
+                        break;
                     }
                 }
             }
@@ -350,13 +413,7 @@ class DocxMustache
         $imgs = $replaceableImage['imgs'];
         $imgs_replaced = $replaceableImage['imgs_replaced'];
 
-
-        //get relation xml file for img relations
-        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
-            ->extractTo($this->storagePath($this->local_path), array('word/_rels/document.xml.rels'), \Chumper\Zipper\Zipper::WHITELIST);
-
-        //load img relations into xml
-        $rels_file = simplexml_load_file($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
+        $rels_file = $this->readOpenXmlObject('word/_rels/document.xml.rels');
 
         $this->RemoveReplaceImages($imgs_replaced, $rels_file);
 
@@ -367,8 +424,7 @@ class DocxMustache
 
         if ($rels_file_xml = $rels_file->asXML())
         {
-            \Storage::disk($this->storageDisk)->put($this->local_path.'word/_rels/document.xml.rels', $rels_file_xml);
-            $this->zipper->folder('word/_rels')->add($this->storagePath($this->local_path.'word/_rels/document.xml.rels'));
+            $this->saveOpenXmlFile('word/_rels/document.xml.rels','word/_rels',$rels_file_xml);
         } else
         {
             throw new Exception('Cannot generate xml for word/_rels/document.xml.rels.');
