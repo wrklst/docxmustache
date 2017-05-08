@@ -153,7 +153,7 @@ class DocxMustache
     {
         $ct_file = $this->ReadOpenXmlFile('[Content_Types].xml', 'object');
 
-        if (!($ct_file instanceof \Traversable)) {
+        if (! ($ct_file instanceof \Traversable)) {
             throw new Exception('Cannot traverse through [Content_Types].xml.');
         } else {
             //check if content type for jpg has been set
@@ -168,7 +168,7 @@ class DocxMustache
 
             //if content type for jpg has not been set, add it to xml
             // and save xml to file and add it to the archive
-            if (!$ct_already_set) {
+            if (! $ct_already_set) {
                 $sxe = $ct_file->addChild('Default');
                 $sxe->addAttribute('Extension', $imageCt);
                 $sxe->addAttribute('ContentType', 'image/'.$imageCt);
@@ -372,7 +372,7 @@ class DocxMustache
             //wait until process is ready
         }
         // executes after the command finishes
-        if (!$process->isSuccessful()) {
+        if (! $process->isSuccessful()) {
             throw new \Symfony\Component\Process\Exception\ProcessFailedException($process);
         } else {
             $path_parts = pathinfo($this->storagePath($this->local_path.$this->template_file_name));
