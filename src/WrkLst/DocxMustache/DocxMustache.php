@@ -48,7 +48,7 @@ class DocxMustache
     /**
      * @param string $file
      */
-    protected function storagePath($file)
+    public function storagePath($file)
     {
         return storage_path($file);
     }
