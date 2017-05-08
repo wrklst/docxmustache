@@ -94,49 +94,40 @@ class DocxMustache
         \Storage::disk($this->storageDisk)->copy($this->storagePathPrefix.$this->template_file, $this->local_path.$this->template_file_name);
     }
 
-    /**
-     * @param string $file
-     */
     protected function exctractOpenXmlFile($file)
     {
         $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
             ->extractTo($this->storagePath($this->local_path), array($file), \Chumper\Zipper\Zipper::WHITELIST);
     }
 
-    /**
-     * @param string $file
-     */
-    protected function readOpenXmlFile($file)
+    protected function ReadOpenXmlFile($file, $type="file")
     {
         $this->exctractOpenXmlFile($file);
 
-        if ($file_contents = \Storage::disk($this->storageDisk)->get($this->local_path.$file))
+        if($type=="file")
         {
-            return $file_contents;
+            if ($file_contents = \Storage::disk($this->storageDisk)->get($this->local_path.$file))
+            {
+                return $file_contents;
+            } else
+            {
+                throw new Exception('Cannot not read file '.$file);
+            }
         } else
         {
-            throw new Exception('Cannot not read file '.$file);
+            if($xml_object = simplexml_load_file($this->storagePath($this->local_path.$file)))
+            {
+                return $xml_object;
+            }
+            else
+            {
+                throw new Exception('Cannot load XML Object from file '.$file);
+            }
         }
+
     }
 
-    /**
-     * @param string $file
-     */
-    protected function readOpenXmlObject($file)
-    {
-        $this->exctractOpenXmlFile($file);
-
-        if($xml_object = simplexml_load_file($this->storagePath($this->local_path.$file)))
-        {
-            return $xml_object;
-        }
-        else
-        {
-            throw new Exception('Cannot load XML Object from file '.$file);
-        }
-    }
-
-    protected function saveOpenXmlFile($file,$folder,$content)
+    protected function SaveOpenXmlFile($file,$folder,$content)
     {
         \Storage::disk($this->storageDisk)
             ->put($this->local_path.$file, $content);
@@ -149,7 +140,7 @@ class DocxMustache
     {
         $this->log('Analyze Template');
         //get the main document out of the docx archive
-        $this->word_doc = readOpenXmlFile('word/document.xml');
+        $this->word_doc = ReadOpenXmlFile('word/document.xml','file');
 
         $this->log('Merge Data into Template');
         $this->word_doc = $this->MustacheRender($this->items, $this->word_doc);
@@ -159,7 +150,7 @@ class DocxMustache
 
         $this->log('Compact Template with Data');
 
-        $this->saveOpenXmlFile('word/document.xml','word',$this->word_doc);
+        $this->SaveOpenXmlFile('word/document.xml','word',$this->word_doc);
         $this->zipper->close();
     }
 
@@ -192,7 +183,7 @@ class DocxMustache
 
     protected function AddContentType($imageCt = "jpeg")
     {
-        $ct_file = $this->readOpenXmlObject('[Content_Types].xml');
+        $ct_file = $this->ReadOpenXmlFile('[Content_Types].xml','object');
 
         //check if content type for jpg has been set
         $i = 0;
@@ -215,7 +206,7 @@ class DocxMustache
 
             if ($ct_file_xml = $ct_file->asXML())
             {
-                $this->saveOpenXmlFile('[Content_Types].xml',false,$ct_file_xml);
+                $this->SaveOpenXmlFile('[Content_Types].xml',false,$ct_file_xml);
             } else
             {
                 throw new Exception('Cannot generate xml for [Content_Types].xml.');
@@ -332,17 +323,23 @@ class DocxMustache
 
         //rework img to new size and jpg format
         $img_rework = \Image::make($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_src']));
+
         $w = $imgs[$k]['width'];
         $h = $imgs[$k]['height'];
-        if ($w > $h) {
+
+        if ($w > $h)
+        {
             $h = null;
-        } else {
+        } else
+        {
             $w = null;
         }
+
         $img_rework->resize($w, $h, function($constraint) {
             $constraint->aspectRatio();
             $constraint->upsize();
         });
+
         $new_height = $img_rework->height();
         $new_width = $img_rework->width();
         $img_rework->save($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
@@ -420,7 +417,7 @@ class DocxMustache
         $imgs = $replaceableImage['imgs'];
         $imgs_replaced = $replaceableImage['imgs_replaced'];
 
-        $rels_file = $this->readOpenXmlObject('word/_rels/document.xml.rels');
+        $rels_file = $this->ReadOpenXmlFile('word/_rels/document.xml.rels','object');
 
         $this->RemoveReplaceImages($imgs_replaced, $rels_file);
 
@@ -431,7 +428,7 @@ class DocxMustache
 
         if ($rels_file_xml = $rels_file->asXML())
         {
-            $this->saveOpenXmlFile('word/_rels/document.xml.rels','word/_rels',$rels_file_xml);
+            $this->SaveOpenXmlFile('word/_rels/document.xml.rels','word/_rels',$rels_file_xml);
         } else
         {
             throw new Exception('Cannot generate xml for word/_rels/document.xml.rels.');
