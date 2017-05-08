@@ -124,7 +124,6 @@ class DocxMustache
                 throw new Exception('Cannot load XML Object from file '.$file);
             }
         }
-
     }
 
     protected function saveOpenXmlFile($file, $folder, $content)
@@ -143,8 +142,10 @@ class DocxMustache
         $this->word_doc = ReadOpenXmlFile('word/document.xml','file');
 
         $this->log('Merge Data into Template');
-        $this->word_doc = $this->MustacheRender($this->items, $this->word_doc);
-        $this->word_doc = $this->convertHtmlToOpenXML($this->word_doc);
+
+        $this->word_doc = new MustacheRender($this->items, $this->word_doc);
+
+        $this->word_doc = new HtmlConversion($this->word_doc);
 
         $this->ImageReplacer();
 
@@ -152,34 +153,6 @@ class DocxMustache
 
         $this->saveOpenXmlFile('word/document.xml', 'word', $this->word_doc);
         $this->zipper->close();
-    }
-
-    protected function MustacheTagCleaner($content)
-    {
-        //kills all xml tags within curly mustache brackets
-        //this is necessary, as word might produce unnecesary xml tage inbetween curly backets.
-        return preg_replace_callback(
-            '/{{(.*?)}}/',
-            function($match) {
-                return strip_tags($match[0]);
-            },
-            $content
-        );
-    }
-
-    protected function MustacheRender($items, $mustache_template, $clean_tags = true)
-    {
-        if ($clean_tags) {
-            $mustache_template = $this->MustacheTagCleaner($mustache_template);
-        }
-
-        $m = new \Mustache_Engine(array('escape' => function($value) {
-            if (str_replace('*[[DONOTESCAPE]]*', '', $value) != $value) {
-                            return str_replace('*[[DONOTESCAPE]]*', '', $value);
-            }
-            return htmlspecialchars($value, ENT_COMPAT, 'UTF-8');
-        }));
-        return $m->render($mustache_template, $items);
     }
 
     protected function AddContentType($imageCt = "jpeg")
@@ -290,89 +263,23 @@ class DocxMustache
         }
     }
 
-    protected function AllowedContentTypeImages()
-    {
-        return array(
-            'image/gif' => '.gif',
-            'image/jpeg' => '.jpeg',
-            'image/png' => '.png',
-            'image/bmp' => '.bmp',
-        );
-    }
-
-    protected function GetImageFromUrl($url)
-    {
-        $allowed_imgs = $this->AllowedContentTypeImages();
-
-        if ($img_file_handle = fopen($url.$this->imageManipulation, "rb"))
-        {
-            $img_data = stream_get_contents($img_file_handle);
-            fclose($img_file_handle);
-            $fi = new \finfo(FILEINFO_MIME);
-
-            $image_mime = strstr($fi->buffer($img_data), ';', true);
-            //dd($image_mime);
-            if (isset($allowed_imgs[$image_mime]))
-            {
-                return array(
-                    'data' => $img_data,
-                    'mime' => $image_mime,
-                );
-            }
-        }
-        return false;
-    }
-
-    protected function ResampleImage($imgs, $k, $data)
-    {
-        \Storage::disk($this->storageDisk)->put($this->local_path.'word/media/'.$imgs[$k]['img_file_src'], $data);
-
-        //rework img to new size and jpg format
-        $img_rework = \Image::make($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_src']));
-
-        $w = $imgs[$k]['width'];
-        $h = $imgs[$k]['height'];
-
-        if ($w > $h)
-        {
-            $h = null;
-        } else
-        {
-            $w = null;
-        }
-
-        $img_rework->resize($w, $h, function($constraint) {
-            $constraint->aspectRatio();
-            $constraint->upsize();
-        });
-
-        $new_height = $img_rework->height();
-        $new_width = $img_rework->width();
-        $img_rework->save($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
-
-        $this->zipper->folder('word/media')->add($this->storagePath($this->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
-
-        return array(
-            'height' => $new_height,
-            'width' => $new_width,
-        );
-    }
-
     protected function InsertImages($ns, &$imgs, &$rels_file, &$main_file)
     {
+        $docimage = new DocImage();
+
         //define what images are allowed
-        $allowed_imgs = $this->AllowedContentTypeImages();
+        $allowed_imgs = $docimage->AllowedContentTypeImages();
 
         //iterate through replacable images
         foreach ($imgs as $k=>$img)
         {
             //get file type of img and test it against supported imgs
-            if ($imgageData = $this->GetImageFromUrl($img['url']))
+            if ($imgageData = $docimage->GetImageFromUrl($img['url']))
             {
                 $imgs[$k]['img_file_src'] = str_replace("wrklstId", "wrklst_image", $img['id']).$allowed_imgs[$imgageData['mime']];
                 $imgs[$k]['img_file_dest'] = str_replace("wrklstId", "wrklst_image", $img['id']).'.jpeg';
 
-                $resampled_img = $this->ResampleImage($imgs, $k, $imgageData['data']);
+                $resampled_img = $docimage->ResampleImage($this, $imgs, $k, $imgageData['data']);
 
                 $sxe = $rels_file->addChild('Relationship');
                 $sxe->addAttribute('Id', $img['id']);
@@ -476,74 +383,6 @@ class DocxMustache
             "url" => $url,
             "rest" => $rest,
         );
-    }
-
-    protected function convertHtmlToOpenXMLTag($value, $tag = "b")
-    {
-        $value_array = array();
-        $run_again = false;
-        //this could be used instead if html was already escaped
-        /*
-        $bo = "&lt;";
-        $bc = "&gt;";
-        */
-        $bo = "<";
-        $bc = ">";
-
-        //get first BOLD
-        $tag_open_values = explode($bo.$tag.$bc, $value, 2);
-
-        if (count($tag_open_values) > 1)
-        {
-            //save everything before the bold and close it
-            $value_array[] = $tag_open_values[0];
-            $value_array[] = '</w:t></w:r>';
-
-            //define styling parameters
-            $wrPr_open = strrpos($tag_open_values[0], '<w:rPr>');
-            $wrPr_close = strrpos($tag_open_values[0], '</w:rPr>', $wrPr_open);
-            $neutral_style = '<w:r><w:rPr>'.substr($tag_open_values[0], ($wrPr_open + 7), ($wrPr_close - ($wrPr_open + 7))).'</w:rPr><w:t>';
-            $tagged_style = '<w:r><w:rPr><w:'.$tag.'/>'.substr($tag_open_values[0], ($wrPr_open + 7), ($wrPr_close - ($wrPr_open + 7))).'</w:rPr><w:t>';
-
-            //open new text run and make it bold, include previous styling
-            $value_array[] = $tagged_style;
-            //get everything before bold close and after
-            $tag_close_values = explode($bo.'/'.$tag.$bc, $tag_open_values[1], 2);
-            //add bold text
-            $value_array[] = $tag_close_values[0];
-            //close bold run
-            $value_array[] = '</w:t></w:r>';
-            //open run for after bold
-            $value_array[] = $neutral_style;
-            $value_array[] = $tag_close_values[1];
-
-            $run_again = true;
-        } else {
-            $value_array[] = $tag_open_values[0];
-        }
-
-        $value = implode('', $value_array);
-
-        if ($run_again) {
-                    $value = $this->convertHtmlToOpenXMLTag($value, $tag);
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param string $value
-     */
-    protected function convertHtmlToOpenXML($value)
-    {
-        $line_breaks = array("&lt;br /&gt;", "&lt;br/&gt;", "&lt;br&gt;", "<br />", "<br/>", "<br>");
-        $value = str_replace($line_breaks, '<w:br/>', $value);
-
-        $value = $this->convertHtmlToOpenXMLTag($value, "b");
-        $value = $this->convertHtmlToOpenXMLTag($value, "i");
-        $value = $this->convertHtmlToOpenXMLTag($value, "u");
-
-        return $value;
     }
 
     public function saveAsPdf()
