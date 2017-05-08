@@ -95,7 +95,7 @@ class DocxMustache
     }
 
     /**
-     * @param string $value
+     * @param string $file
      */
     protected function exctractOpenXmlFile($file)
     {
@@ -104,7 +104,7 @@ class DocxMustache
     }
 
     /**
-     * @param string $value
+     * @param string $file
      */
     protected function readOpenXmlFile($file)
     {
@@ -115,18 +115,25 @@ class DocxMustache
             return $file_contents;
         } else
         {
-            throw new Exception('could not read');
+            throw new Exception('Cannot not read file '.$file);
         }
     }
 
     /**
-     * @param string $value
+     * @param string $file
      */
     protected function readOpenXmlObject($file)
     {
         $this->exctractOpenXmlFile($file);
 
-        return simplexml_load_file($this->storagePath($this->local_path.$file));
+        if($xml_object = simplexml_load_file($this->storagePath($this->local_path.$file)))
+        {
+            return $xml_object;
+        }
+        else
+        {
+            throw new Exception('Cannot load XML Object from file '.$file);
+        }
     }
 
     protected function saveOpenXmlFile($file,$folder,$content)
