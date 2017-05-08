@@ -1,0 +1,8 @@
+preset: laravel
+
+risky: false
+
+finder:
+  exclude:
+    - "example"
+    - "tests"
