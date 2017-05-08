@@ -41,7 +41,7 @@ class DocImage
         \Storage::disk($parent->storageDisk)->put($parent->local_path.'word/media/'.$imgs[$k]['img_file_src'], $data);
 
         //rework img to new size and jpg format
-        $img_rework = \Image::make($parent->storagePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']));
+        $img_rework = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']));
 
         $w = $imgs[$k]['width'];
         $h = $imgs[$k]['height'];
@@ -59,9 +59,9 @@ class DocImage
 
         $new_height = $img_rework->height();
         $new_width = $img_rework->width();
-        $img_rework->save($parent->storagePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+        $img_rework->save($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
 
-        $parent->zipper->folder('word/media')->add($parent->storagePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+        $parent->zipper->folder('word/media')->add($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
 
         return [
             'height' => $new_height,

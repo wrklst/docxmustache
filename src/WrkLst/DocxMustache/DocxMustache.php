@@ -39,16 +39,16 @@ class DocxMustache
         $this->verbose = false;
     }
 
-    public function execute()
+    public function Execute()
     {
-        $this->copyTmplate();
-        $this->readTeamplate();
+        $this->CopyTmplate();
+        $this->ReadTeamplate();
     }
 
     /**
      * @param string $file
      */
-    public function storagePath($file)
+    public function StoragePath($file)
     {
         return storage_path($file);
     }
@@ -56,7 +56,7 @@ class DocxMustache
     /**
      * @param string $msg
      */
-    protected function log($msg)
+    protected function Log($msg)
     {
         //introduce logging method here to keep track of process
         // can be overwritten in extended class to log with custom preocess logger
@@ -65,7 +65,7 @@ class DocxMustache
         }
     }
 
-    public function cleanUpTmpDirs()
+    public function CleanUpTmpDirs()
     {
         $now = time();
         $isExpired = ($now - (60 * 240));
@@ -79,26 +79,26 @@ class DocxMustache
         }
     }
 
-    public function getTmpDir()
+    public function GetTmpDir()
     {
-        $this->cleanUpTmpDirs();
+        $this->CleanUpTmpDirs();
         $path = $this->storagePathPrefix.'DocxMustache/'.uniqid($this->template_file).'/';
-        \File::makeDirectory($this->storagePath($path), 0775, true);
+        \File::makeDirectory($this->StoragePath($path), 0775, true);
 
         return $path;
     }
 
-    public function copyTmplate()
+    public function CopyTmplate()
     {
-        $this->log('Get Copy of Template');
-        $this->local_path = $this->getTmpDir();
+        $this->Log('Get Copy of Template');
+        $this->local_path = $this->GetTmpDir();
         \Storage::disk($this->storageDisk)->copy($this->storagePathPrefix.$this->template_file, $this->local_path.$this->template_file_name);
     }
 
     protected function exctractOpenXmlFile($file)
     {
-        $this->zipper->make($this->storagePath($this->local_path.$this->template_file_name))
-            ->extractTo($this->storagePath($this->local_path), [$file], \Chumper\Zipper\Zipper::WHITELIST);
+        $this->zipper->make($this->StoragePath($this->local_path.$this->template_file_name))
+            ->extractTo($this->StoragePath($this->local_path), [$file], \Chumper\Zipper\Zipper::WHITELIST);
     }
 
     protected function ReadOpenXmlFile($file, $type = 'file')
@@ -112,7 +112,7 @@ class DocxMustache
                 throw new Exception('Cannot not read file '.$file);
             }
         } else {
-            if ($xml_object = simplexml_load_file($this->storagePath($this->local_path.$file))) {
+            if ($xml_object = simplexml_load_file($this->StoragePath($this->local_path.$file))) {
                 return $xml_object;
             } else {
                 throw new Exception('Cannot load XML Object from file '.$file);
@@ -120,21 +120,21 @@ class DocxMustache
         }
     }
 
-    protected function saveOpenXmlFile($file, $folder, $content)
+    protected function SaveOpenXmlFile($file, $folder, $content)
     {
         \Storage::disk($this->storageDisk)
             ->put($this->local_path.$file, $content);
         //add new content to word doc
         if ($folder) {
             $this->zipper->folder($folder)
-                ->add($this->storagePath($this->local_path.$file));
+                ->add($this->StoragePath($this->local_path.$file));
         } else {
             $this->zipper
-                ->add($this->storagePath($this->local_path.$file));
+                ->add($this->StoragePath($this->local_path.$file));
         }
     }
 
-    protected function saveOpenXmlObjectToFile($xmlObject, $file, $folder)
+    protected function SaveOpenXmlObjectToFile($xmlObject, $file, $folder)
     {
         if ($xmlString = $xmlObject->asXML()) {
             $this->SaveOpenXmlFile($file, $folder, $xmlString);
@@ -143,13 +143,13 @@ class DocxMustache
         }
     }
 
-    public function readTeamplate()
+    public function ReadTeamplate()
     {
-        $this->log('Analyze Template');
+        $this->Log('Analyze Template');
         //get the main document out of the docx archive
         $this->word_doc = $this->ReadOpenXmlFile('word/document.xml', 'file');
 
-        $this->log('Merge Data into Template');
+        $this->Log('Merge Data into Template');
 
         $this->word_doc = MustacheRender::render($this->items, $this->word_doc);
 
@@ -157,9 +157,9 @@ class DocxMustache
 
         $this->ImageReplacer();
 
-        $this->log('Compact Template with Data');
+        $this->Log('Compact Template with Data');
 
-        $this->saveOpenXmlFile('word/document.xml', 'word', $this->word_doc);
+        $this->SaveOpenXmlFile('word/document.xml', 'word', $this->word_doc);
         $this->zipper->close();
     }
 
@@ -187,7 +187,7 @@ class DocxMustache
             $sxe = $ct_file->addChild('Default');
             $sxe->addAttribute('Extension', $imageCt);
             $sxe->addAttribute('ContentType', 'image/'.$imageCt);
-            $this->saveOpenXmlObjectToFile($ct_file, '[Content_Types].xml', false);
+            $this->SaveOpenXmlObjectToFile($ct_file, '[Content_Types].xml', false);
         }
     }
 
@@ -209,7 +209,7 @@ class DocxMustache
             $cy = (int) $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()['cy'];
 
             //figure out if there is a URL saved in the description field of the img
-            $img_url = $this->analyseImgUrlString((string) $drawing->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr']);
+            $img_url = $this->AnalyseImgUrlString((string) $drawing->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr']);
             $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr'] = $img_url['rest'];
 
             //check https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/
@@ -260,8 +260,6 @@ class DocxMustache
     protected function InsertImages($ns, &$imgs, &$rels_file, &$main_file)
     {
         $docimage = new DocImage();
-
-        //define what images are allowed
         $allowed_imgs = $docimage->AllowedContentTypeImages();
 
         //iterate through replacable images
@@ -308,7 +306,7 @@ class DocxMustache
 
     protected function ImageReplacer()
     {
-        $this->log('Merge Images into Template');
+        $this->Log('Merge Images into Template');
 
         //load main doc xml
         $main_file = simplexml_load_string($this->word_doc);
@@ -329,7 +327,7 @@ class DocxMustache
 
         $this->InsertImages($ns, $imgs, $rels_file, $main_file);
 
-        $this->saveOpenXmlObjectToFile($rels_file, 'word/_rels/document.xml.rels', 'word/_rels');
+        $this->SaveOpenXmlObjectToFile($rels_file, 'word/_rels/document.xml.rels', 'word/_rels');
 
         if ($main_file_xml = $main_file->asXML()) {
             $this->word_doc = $main_file_xml;
@@ -341,7 +339,7 @@ class DocxMustache
     /**
      * @param string $string
      */
-    protected function analyseImgUrlString($string)
+    protected function AnalyseImgUrlString($string)
     {
         $start = '[IMG-REPLACE]';
         $end = '[/IMG-REPLACE]';
@@ -361,16 +359,16 @@ class DocxMustache
         }
 
         return [
-            'url'  => $url,
-            'rest' => $rest,
+            'url'  => trim($url),
+            'rest' => trim($rest),
         ];
     }
 
-    public function saveAsPdf()
+    public function SaveAsPdf()
     {
-        $this->log('Converting DOCX to PDF');
+        $this->Log('Converting DOCX to PDF');
         //convert to pdf with libre office
-        $command = 'soffice --headless --convert-to pdf '.$this->storagePath($this->local_path.$this->template_file_name).' --outdir '.$this->storagePath($this->local_path);
+        $command = 'soffice --headless --convert-to pdf '.$this->StoragePath($this->local_path.$this->template_file_name).' --outdir '.$this->StoragePath($this->local_path);
         $process = new \Symfony\Component\Process\Process($command);
         $process->start();
         while ($process->isRunning()) {
@@ -380,9 +378,9 @@ class DocxMustache
         if (! $process->isSuccessful()) {
             throw new \Symfony\Component\Process\Exception\ProcessFailedException($process);
         } else {
-            $path_parts = pathinfo($this->storagePath($this->local_path.$this->template_file_name));
+            $path_parts = pathinfo($this->StoragePath($this->local_path.$this->template_file_name));
 
-            return $this->storagePath($this->local_path.$path_parts['filename'].'pdf');
+            return $this->StoragePath($this->local_path.$path_parts['filename'].'pdf');
         }
     }
 }
