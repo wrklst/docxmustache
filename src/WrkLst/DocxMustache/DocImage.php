@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 class DocImage
 {
-    protected function AllowedContentTypeImages()
+    public function AllowedContentTypeImages()
     {
         return array(
             'image/gif' => '.gif',
@@ -17,11 +17,11 @@ class DocImage
         );
     }
 
-    public function GetImageFromUrl($url)
+    public function GetImageFromUrl($url, $manipulation)
     {
         $allowed_imgs = $this->AllowedContentTypeImages();
 
-        if ($img_file_handle = fopen($url.$this->imageManipulation, "rb"))
+        if ($img_file_handle = fopen($url.$manipulation, "rb"))
         {
             $img_data = stream_get_contents($img_file_handle);
             fclose($img_file_handle);
@@ -40,7 +40,7 @@ class DocImage
         return false;
     }
 
-    protected function ResampleImage($parent, $imgs, $k, $data)
+    public function ResampleImage($parent, $imgs, $k, $data)
     {
         \Storage::disk($parent->storageDisk)->put($parent->local_path.'word/media/'.$imgs[$k]['img_file_src'], $data);
 

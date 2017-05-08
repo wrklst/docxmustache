@@ -143,9 +143,9 @@ class DocxMustache
 
         $this->log('Merge Data into Template');
 
-        $this->word_doc = new MustacheRender($this->items, $this->word_doc);
+        $this->word_doc = MustacheRender::render($this->items, $this->word_doc);
 
-        $this->word_doc = new HtmlConversion($this->word_doc);
+        $this->word_doc = HtmlConversion::convert($this->word_doc);
 
         $this->ImageReplacer();
 
@@ -274,7 +274,7 @@ class DocxMustache
         foreach ($imgs as $k=>$img)
         {
             //get file type of img and test it against supported imgs
-            if ($imgageData = $docimage->GetImageFromUrl($img['url']))
+            if ($imgageData = $docimage->GetImageFromUrl($img['url'], $this->imageManipulation))
             {
                 $imgs[$k]['img_file_src'] = str_replace("wrklstId", "wrklst_image", $img['id']).$allowed_imgs[$imgageData['mime']];
                 $imgs[$k]['img_file_dest'] = str_replace("wrklstId", "wrklst_image", $img['id']).'.jpeg';

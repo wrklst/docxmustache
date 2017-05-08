@@ -7,15 +7,10 @@ use Illuminate\Support\Facades\Log;
 
 class HtmlConversion
 {
-    public function __construct($value)
-    {
-        return $this->convertHtmlToOpenXML($value);
-    }
-
     /**
      * @param string $value
      */
-    protected function convertHtmlToOpenXML($value)
+    public function convert($value)
     {
         $line_breaks = array("&lt;br /&gt;", "&lt;br/&gt;", "&lt;br&gt;", "<br />", "<br/>", "<br>");
         $value = str_replace($line_breaks, '<w:br/>', $value);

@@ -4,11 +4,6 @@ namespace WrkLst\DocxMustache;
 
 class MustacheRender
 {
-    public function __construct($items, $mustache_template, $clean_tags = true)
-    {
-        return $this->Render($items, $mustache_template, $clean_tags);
-    }
-
     protected function Render($items, $mustache_template, $clean_tags = true)
     {
         if ($clean_tags) {
