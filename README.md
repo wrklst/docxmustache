@@ -14,11 +14,6 @@ This package helps you to use docx files with mustache syntax as templates for r
 
 Please check depencies down below and examples folder for configuration and usage.
 
-## Why another openXML / docx template solution?
-There are plenty of solutions out there, many with commercial licenses and some free. For our particular purpose we did not need most of the features many of the libraries out there have – we simply needed a solution that would allow to replace values and iterate through an array as well as basic image placeholder replacing.
-
-Many of the other libraries use cloning to repeat a block. We use the usual mustache syntax to achieve repeating content in as many dimensions as needed. This introduces some issues, if the template is not setup in a manner that the content can be repeated, but in most cases it is perfectly sufficient, if the template is setup with this in mind.
-
 ## HTML conversion
 
 Current HTML conversion is basic and only supports singular runs of bold, itallic and underlined text and no combination of these. It requires all values non html to be escaped with 
@@ -56,5 +51,17 @@ Laravel specific dependencies (only relevant if ported into non Laravel environm
 * [\Symfony\Component\Process\Process](http://symfony.com/doc/current/components/process.html) (only for PDF conversion)
 
 ## Contributions
-
 If you would like to contribute something to this package, please feel free to make a pull request and a corresponding issue and we will be happy to review and discuss.
+
+## Why another openXML / docx template solution?
+There are some classes out there that help with writing and or changing the content of word documents, some with commercial licenses and some free. For our particular purpose we did not need most of the features many of the libraries out there have – we needed a simple solution that would allow to replace values and images and traverse through data in a easy and straightforward manner.
+
+Many of the other libraries use cloning to repeat a block with some custom templating syntax instead of using a existing template syntax. We use the usual mustache syntax, also to achieve repeating content in as many dimensions as needed.
+
+Other PHP Classes to manipulate openXML word documents:
+
+* [openTBS – Tiny But Strong](http://www.tinybutstrong.com/opentbs.php)
+* [PHPWord](https://github.com/PHPOffice/PHPWord)
+* [docxtemplater pro](https://modules.docxtemplater.com) (basic opensource / free version / MIT license available as of writing; image replacing is a commercial plugin)
+* [docxpresso](http://www.docxpresso.com) (commercial)
+* [phpdocx](https://www.phpdocx.com) (commercial)
