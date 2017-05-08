@@ -2,9 +2,6 @@
 
 namespace WrkLst\DocxMustache;
 
-use Exception;
-use Illuminate\Support\Facades\Log;
-
 class HtmlConversion
 {
     /**
@@ -12,33 +9,32 @@ class HtmlConversion
      */
     public static function convert($value)
     {
-        $line_breaks = array("&lt;br /&gt;", "&lt;br/&gt;", "&lt;br&gt;", "<br />", "<br/>", "<br>");
+        $line_breaks = ['&lt;br /&gt;', '&lt;br/&gt;', '&lt;br&gt;', '<br />', '<br/>', '<br>'];
         $value = str_replace($line_breaks, '<w:br/>', $value);
 
-        $value = self::convertHtmlToOpenXMLTag($value, "b");
-        $value = self::convertHtmlToOpenXMLTag($value, "i");
-        $value = self::convertHtmlToOpenXMLTag($value, "u");
+        $value = self::convertHtmlToOpenXMLTag($value, 'b');
+        $value = self::convertHtmlToOpenXMLTag($value, 'i');
+        $value = self::convertHtmlToOpenXMLTag($value, 'u');
 
         return $value;
     }
 
-    public static function convertHtmlToOpenXMLTag($value, $tag = "b")
+    public static function convertHtmlToOpenXMLTag($value, $tag = 'b')
     {
-        $value_array = array();
+        $value_array = [];
         $run_again = false;
         //this could be used instead if html was already escaped
         /*
         $bo = "&lt;";
         $bc = "&gt;";
         */
-        $bo = "<";
-        $bc = ">";
+        $bo = '<';
+        $bc = '>';
 
         //get first BOLD
         $tag_open_values = explode($bo.$tag.$bc, $value, 2);
 
-        if (count($tag_open_values) > 1)
-        {
+        if (count($tag_open_values) > 1) {
             //save everything before the bold and close it
             $value_array[] = $tag_open_values[0];
             $value_array[] = '</w:t></w:r>';
@@ -69,7 +65,7 @@ class HtmlConversion
         $value = implode('', $value_array);
 
         if ($run_again) {
-                    $value = self::convertHtmlToOpenXMLTag($value, $tag);
+            $value = self::convertHtmlToOpenXMLTag($value, $tag);
         }
 
         return $value;
