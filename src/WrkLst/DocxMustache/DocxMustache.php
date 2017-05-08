@@ -60,8 +60,9 @@ class DocxMustache
     {
         //introduce logging method here to keep track of process
         // can be overwritten in extended class to log with custom preocess logger
-        if ($this->verbose)
+        if ($this->verbose) {
             Log::error($msg);
+        }
     }
 
     public function cleanUpTmpDirs()
@@ -115,11 +116,10 @@ class DocxMustache
             }
         } else
         {
-            if($xml_object = simplexml_load_file($this->storagePath($this->local_path.$file)))
+            if ($xml_object = simplexml_load_file($this->storagePath($this->local_path.$file)))
             {
                 return $xml_object;
-            }
-            else
+            } else
             {
                 throw new Exception('Cannot load XML Object from file '.$file);
             }
@@ -127,7 +127,7 @@ class DocxMustache
 
     }
 
-    protected function SaveOpenXmlFile($file,$folder,$content)
+    protected function saveOpenXmlFile($file, $folder, $content)
     {
         \Storage::disk($this->storageDisk)
             ->put($this->local_path.$file, $content);
@@ -150,7 +150,7 @@ class DocxMustache
 
         $this->log('Compact Template with Data');
 
-        $this->SaveOpenXmlFile('word/document.xml','word',$this->word_doc);
+        $this->saveOpenXmlFile('word/document.xml', 'word', $this->word_doc);
         $this->zipper->close();
     }
 
@@ -169,8 +169,9 @@ class DocxMustache
 
     protected function MustacheRender($items, $mustache_template, $clean_tags = true)
     {
-        if($clean_tags)
+        if ($clean_tags) {
             $mustache_template = $this->MustacheTagCleaner($mustache_template);
+        }
 
         $m = new \Mustache_Engine(array('escape' => function($value) {
             if (str_replace('*[[DONOTESCAPE]]*', '', $value) != $value) {
@@ -185,31 +186,36 @@ class DocxMustache
     {
         $ct_file = $this->ReadOpenXmlFile('[Content_Types].xml','object');
 
-        //check if content type for jpg has been set
-        $i = 0;
-        $ct_already_set = false;
-        foreach ($ct_file as $ct)
+        if (!($ct_file instanceof \Traversable)) {
+            throw new Exception('Cannot traverse through [Content_Types].xml.');
+        } else
         {
-            if ((string) $ct_file->Default[$i]['Extension'] == $imageCt) {
-                            $ct_already_set = true;
+            //check if content type for jpg has been set
+            $i = 0;
+            $ct_already_set = false;
+            foreach ($ct_file as $ct)
+            {
+                if ((string) $ct_file->Default[$i]['Extension'] == $imageCt) {
+                                $ct_already_set = true;
+                }
+                $i++;
             }
-            $i++;
-        }
 
-        //if content type for jpg has not been set, add it to xml
-        // and save xml to file and add it to the archive
-        if (!$ct_already_set)
-        {
-            $sxe = $ct_file->addChild('Default');
-            $sxe->addAttribute('Extension', $imageCt);
-            $sxe->addAttribute('ContentType', 'image/'.$imageCt);
+            //if content type for jpg has not been set, add it to xml
+            // and save xml to file and add it to the archive
+            if (!$ct_already_set)
+            {
+                $sxe = $ct_file->addChild('Default');
+                $sxe->addAttribute('Extension', $imageCt);
+                $sxe->addAttribute('ContentType', 'image/'.$imageCt);
 
-            if ($ct_file_xml = $ct_file->asXML())
-            {
-                $this->SaveOpenXmlFile('[Content_Types].xml',false,$ct_file_xml);
-            } else
-            {
-                throw new Exception('Cannot generate xml for [Content_Types].xml.');
+                if ($ct_file_xml = $ct_file->asXML())
+                {
+                    $this->SaveOpenXmlFile('[Content_Types].xml', false, $ct_file_xml);
+                } else
+                {
+                    throw new Exception('Cannot generate xml for [Content_Types].xml.');
+                }
             }
         }
     }
@@ -361,7 +367,7 @@ class DocxMustache
         foreach ($imgs as $k=>$img)
         {
             //get file type of img and test it against supported imgs
-            if($imgageData = $this->GetImageFromUrl($img['url']))
+            if ($imgageData = $this->GetImageFromUrl($img['url']))
             {
                 $imgs[$k]['img_file_src'] = str_replace("wrklstId", "wrklst_image", $img['id']).$allowed_imgs[$imgageData['mime']];
                 $imgs[$k]['img_file_dest'] = str_replace("wrklstId", "wrklst_image", $img['id']).'.jpeg';
@@ -428,7 +434,7 @@ class DocxMustache
 
         if ($rels_file_xml = $rels_file->asXML())
         {
-            $this->SaveOpenXmlFile('word/_rels/document.xml.rels','word/_rels',$rels_file_xml);
+            $this->SaveOpenXmlFile('word/_rels/document.xml.rels', 'word/_rels', $rels_file_xml);
         } else
         {
             throw new Exception('Cannot generate xml for word/_rels/document.xml.rels.');
