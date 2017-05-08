@@ -5,8 +5,7 @@ namespace WrkLst\DocxMustache;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * DocxMustacheFacade
- *
+ * DocxMustacheFacade.
  */
 class DocxMustacheFacade extends Facade
 {

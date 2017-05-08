@@ -10,12 +10,14 @@ class MustacheRender
             $mustache_template = self::TagCleaner($mustache_template);
         }
 
-        $m = new \Mustache_Engine(array('escape' => function($value) {
+        $m = new \Mustache_Engine(['escape' => function ($value) {
             if (str_replace('*[[DONOTESCAPE]]*', '', $value) != $value) {
-                            return str_replace('*[[DONOTESCAPE]]*', '', $value);
+                return str_replace('*[[DONOTESCAPE]]*', '', $value);
             }
+
             return htmlspecialchars($value, ENT_COMPAT, 'UTF-8');
-        }));
+        }]);
+
         return $m->render($mustache_template, $items);
     }
 
@@ -25,7 +27,7 @@ class MustacheRender
         //this is necessary, as word might produce unnecesary xml tage inbetween curly backets.
         return preg_replace_callback(
             '/{{(.*?)}}/',
-            function($match) {
+            function ($match) {
                 return strip_tags($match[0]);
             },
             $content
