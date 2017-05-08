@@ -4,7 +4,7 @@ namespace WrkLst\DocxMustache;
 
 class MustacheRender
 {
-    public function Render($items, $mustache_template, $clean_tags = true)
+    public static function Render($items, $mustache_template, $clean_tags = true)
     {
         if ($clean_tags) {
             $mustache_template = $this->TagCleaner($mustache_template);

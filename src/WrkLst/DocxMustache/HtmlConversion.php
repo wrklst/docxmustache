@@ -10,7 +10,7 @@ class HtmlConversion
     /**
      * @param string $value
      */
-    public function convert($value)
+    public static function convert($value)
     {
         $line_breaks = array("&lt;br /&gt;", "&lt;br/&gt;", "&lt;br&gt;", "<br />", "<br/>", "<br>");
         $value = str_replace($line_breaks, '<w:br/>', $value);
