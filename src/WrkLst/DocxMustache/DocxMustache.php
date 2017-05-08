@@ -125,8 +125,22 @@ class DocxMustache
         \Storage::disk($this->storageDisk)
             ->put($this->local_path.$file, $content);
         //add new content to word doc
-        $this->zipper->folder($folder)
-            ->add($this->storagePath($this->local_path.$file));
+        if ($folder) {
+            $this->zipper->folder($folder)
+                ->add($this->storagePath($this->local_path.$file));
+        } else {
+            $this->zipper
+                ->add($this->storagePath($this->local_path.$file));
+        }
+    }
+
+    protected function saveOpenXmlObjectToFile($xmlObject, $file, $folder)
+    {
+        if ($xmlString = $xmlObject->asXML()) {
+            $this->SaveOpenXmlFile($file, $folder, $xmlString);
+        } else {
+            throw new Exception('Cannot generate xml for '.$file);
+        }
     }
 
     public function readTeamplate()
@@ -155,30 +169,25 @@ class DocxMustache
 
         if (! ($ct_file instanceof \Traversable)) {
             throw new Exception('Cannot traverse through [Content_Types].xml.');
-        } else {
-            //check if content type for jpg has been set
-            $i = 0;
-            $ct_already_set = false;
-            foreach ($ct_file as $ct) {
-                if ((string) $ct_file->Default[$i]['Extension'] == $imageCt) {
-                    $ct_already_set = true;
-                }
-                $i++;
-            }
+        }
 
-            //if content type for jpg has not been set, add it to xml
-            // and save xml to file and add it to the archive
-            if (! $ct_already_set) {
-                $sxe = $ct_file->addChild('Default');
-                $sxe->addAttribute('Extension', $imageCt);
-                $sxe->addAttribute('ContentType', 'image/'.$imageCt);
-
-                if ($ct_file_xml = $ct_file->asXML()) {
-                    $this->SaveOpenXmlFile('[Content_Types].xml', false, $ct_file_xml);
-                } else {
-                    throw new Exception('Cannot generate xml for [Content_Types].xml.');
-                }
+        //check if content type for jpg has been set
+        $i = 0;
+        $ct_already_set = false;
+        foreach ($ct_file as $ct) {
+            if ((string) $ct_file->Default[$i]['Extension'] == $imageCt) {
+                $ct_already_set = true;
             }
+            $i++;
+        }
+
+        //if content type for jpg has not been set, add it to xml
+        // and save xml to file and add it to the archive
+        if (! $ct_already_set) {
+            $sxe = $ct_file->addChild('Default');
+            $sxe->addAttribute('Extension', $imageCt);
+            $sxe->addAttribute('ContentType', 'image/'.$imageCt);
+            $this->saveOpenXmlObjectToFile($ct_file, '[Content_Types].xml', false);
         }
     }
 
@@ -320,11 +329,7 @@ class DocxMustache
 
         $this->InsertImages($ns, $imgs, $rels_file, $main_file);
 
-        if ($rels_file_xml = $rels_file->asXML()) {
-            $this->SaveOpenXmlFile('word/_rels/document.xml.rels', 'word/_rels', $rels_file_xml);
-        } else {
-            throw new Exception('Cannot generate xml for word/_rels/document.xml.rels.');
-        }
+        $this->saveOpenXmlObjectToFile($rels_file, 'word/_rels/document.xml.rels', 'word/_rels');
 
         if ($main_file_xml = $main_file->asXML()) {
             $this->word_doc = $main_file_xml;
