@@ -69,7 +69,7 @@ class HtmlConversion
         $value = implode('', $value_array);
 
         if ($run_again) {
-                    $value = $this->convertHtmlToOpenXMLTag($value, $tag);
+                    $value = self::convertHtmlToOpenXMLTag($value, $tag);
         }
 
         return $value;
