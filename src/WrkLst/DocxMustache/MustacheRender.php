@@ -7,7 +7,7 @@ class MustacheRender
     public static function Render($items, $mustache_template, $clean_tags = true)
     {
         if ($clean_tags) {
-            $mustache_template = $this->TagCleaner($mustache_template);
+            $mustache_template = self::TagCleaner($mustache_template);
         }
 
         $m = new \Mustache_Engine(array('escape' => function($value) {
@@ -19,7 +19,7 @@ class MustacheRender
         return $m->render($mustache_template, $items);
     }
 
-    protected function TagCleaner($content)
+    public static function TagCleaner($content)
     {
         //kills all xml tags within curly mustache brackets
         //this is necessary, as word might produce unnecesary xml tage inbetween curly backets.

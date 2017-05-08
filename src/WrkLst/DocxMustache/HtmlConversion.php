@@ -15,14 +15,14 @@ class HtmlConversion
         $line_breaks = array("&lt;br /&gt;", "&lt;br/&gt;", "&lt;br&gt;", "<br />", "<br/>", "<br>");
         $value = str_replace($line_breaks, '<w:br/>', $value);
 
-        $value = $this->convertHtmlToOpenXMLTag($value, "b");
-        $value = $this->convertHtmlToOpenXMLTag($value, "i");
-        $value = $this->convertHtmlToOpenXMLTag($value, "u");
+        $value = self::convertHtmlToOpenXMLTag($value, "b");
+        $value = self::convertHtmlToOpenXMLTag($value, "i");
+        $value = self::convertHtmlToOpenXMLTag($value, "u");
 
         return $value;
     }
 
-    protected function convertHtmlToOpenXMLTag($value, $tag = "b")
+    public static function convertHtmlToOpenXMLTag($value, $tag = "b")
     {
         $value_array = array();
         $run_again = false;
