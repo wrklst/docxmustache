@@ -35,8 +35,8 @@ Please also checkout the example in the example folder to get a basic understand
 
 ## DOCX to PDF conversion
 
-Conversion to PDF requires `soffice` to be installed on the server (used for conversion).
-Use `sudo apt install soffice` on your ubuntu/debian based server. Also install ttf-mscorefonts if you need support for Arial font when converting docx documents to pdf `sudo apt-get install ttf-mscorefonts-installer `
+Conversion to PDF requires `libreoffice-common` to be installed on the server (used for conversion).
+Use `sudo apt install libreoffice-common` on your ubuntu/debian based server. Also install ttf-mscorefonts if you need support for Arial font when converting docx documents to pdf `sudo apt-get install ttf-mscorefonts-installer `
 
 ## Other Dependencies
 The package is dependent on several Laravel specific functions. It could easily be ported to other frameworks or be ported to be framework agnostic. In addition to the Laravel dependency, the page uses the following packages:
