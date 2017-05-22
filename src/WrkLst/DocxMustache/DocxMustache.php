@@ -291,16 +291,14 @@ class DocxMustache
                             ->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])
                             ->xfrm->ext->attributes()['cy'] = $new_height_emus;
                         //anchored images
-                        if($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor)
-                        {
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()["cx"] = $new_width_emus;
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()["cy"] = $new_height_emus;
+                        if ($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor) {
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()['cx'] = $new_width_emus;
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()['cy'] = $new_height_emus;
                         }
                         //inlined images
-                        elseif($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline)
-                        {
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cx"] = $new_width_emus;
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cy"] = $new_height_emus;
+                        elseif ($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline) {
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()['cx'] = $new_width_emus;
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()['cy'] = $new_height_emus;
                         }
 
                         break;
