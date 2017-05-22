@@ -223,8 +223,8 @@ class DocxMustache
             //if there is a url, save this img as a img to be replaced
             if (trim($img_url['url'])) {
                 $imgs[] = [
-                    'cx'     => $cx,
-                    'cy'     => $cy,
+                    'cx'     => (int) $cx,
+                    'cy'     => (int) $cy,
                     'width'  => (int) ($cx / 5187.627118644067797),
                     'height' => (int) ($cy / 5187.627118644067797),
                     'wasId'  => $wasId,
@@ -290,13 +290,19 @@ class DocxMustache
                         $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
                             ->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])
                             ->xfrm->ext->attributes()['cy'] = $new_height_emus;
+                        //anchored images
+                        if($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor)
+                        {
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()["cx"] = $new_width_emus;
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()["cy"] = $new_height_emus;
+                        }
+                        //inlined images
+                        elseif($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline)
+                        {
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cx"] = $new_width_emus;
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cy"] = $new_height_emus;
+                        }
 
-                        //the following also changes the contraints of the container for the img.
-                        // probably not wanted, as this will make images larger than the constraints of the placeholder
-                        /*
-                        $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cx"] = $new_width_emus;
-                        $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()["cy"] = $new_height_emus;
-                        */
                         break;
                     }
                 }
