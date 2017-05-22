@@ -34,7 +34,7 @@ class MustacheRender
             function ($match) {
                 return strip_tags($match[0]);
             },
-            preg_replace("/(?<!{){(?!{)<\/w:t>[\s\S]*?<w:t>{/", "{{", $content)
+            preg_replace("/(?<!{){(?!{)<\/w:t>[\s\S]*?<w:t>{/", '{{', $content)
         );
 
         /*
