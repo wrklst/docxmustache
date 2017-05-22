@@ -47,16 +47,15 @@ class DocImage
         $h = $imgs[$k]['height'];
         $imgWidth = $img_rework->width();
         $imgHeight = $img_rework->height();
-        $availableWidth = (int)($imgs[$k]['cx'] / 5187.627118644067797);
-        $availableHeight = (int)($imgs[$k]['cy'] / 5187.627118644067797);
+        $availableWidth = (int) ($imgs[$k]['cx'] / 5187.627118644067797);
+        $availableHeight = (int) ($imgs[$k]['cy'] / 5187.627118644067797);
 
-        if(($imgWidth-$availableWidth)>($imgHeight-$availableHeight)) {
+        if (($imgWidth - $availableWidth) > ($imgHeight - $availableHeight)) {
             $h = null;
-        } else
-        {
+        } else {
             $w = null;
         }
-        
+
         $img_rework->resize($w, $h, function ($constraint) {
             $constraint->aspectRatio();
             $constraint->upsize();
