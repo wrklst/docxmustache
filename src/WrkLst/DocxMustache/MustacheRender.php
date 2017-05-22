@@ -24,13 +24,23 @@ class MustacheRender
     public static function TagCleaner($content)
     {
         //kills all xml tags within curly mustache brackets
-        //this is necessary, as word might produce unnecesary xml tage inbetween curly backets.
+        //this is necessary, as word might produce unnecesary xml tags inbetween curly backets.
+
+        //this regex needs either to be improved or it needs to be replace with a method that is aware of the xml
+        // as the regex can mess up the xml badly if the pattern does not coem with the expected content
+
         return preg_replace_callback(
             '/{{(.*?)}}/',
             function ($match) {
                 return strip_tags($match[0]);
             },
-            $content
+            preg_replace("/(?<!{){(?!{)<\/w:t>[\s\S]*?<w:t>{/", "{{", $content)
         );
+
+        /*
+        {{...value with tags...}}  --> {{value without tags}}
+        <w:t>{</w:t>...<w:t>{  --> <w:t>{{
+        }}{</w:t>...<w:t>{  --> }}{{
+        */
     }
 }
