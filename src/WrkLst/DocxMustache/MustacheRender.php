@@ -36,11 +36,5 @@ class MustacheRender
             },
             preg_replace("/(?<!{){(?!{)<\/w:t>[\s\S]*?<w:t>{/", '{{', $content)
         );
-
-        /*
-        {{...value with tags...}}  --> {{value without tags}}
-        <w:t>{</w:t>...<w:t>{  --> <w:t>{{
-        }}{</w:t>...<w:t>{  --> }}{{
-        */
     }
 }
