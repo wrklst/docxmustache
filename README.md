@@ -1,7 +1,7 @@
 ![DocxMutache Logo](https://github.com/wrklst/docxmustache/raw/master/example/logo.png)
 # DocxMustache *for Laravel 5.4*
 
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md) [![Quality Score](https://img.shields.io/scrutinizer/g/wrklst/docxmustache.svg?style=flat-square&b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/build-status/master) 
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE) [![Quality Score](https://img.shields.io/scrutinizer/g/wrklst/docxmustache.svg?style=flat-square&b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/build-status/master) 
 [![StyleCI](https://styleci.io/repos/90483440/shield?branch=master)](https://styleci.io/repos/90483440)
 
 Docx template manipulation class for Laravel 5.4, based on [mustache templating language](https://mustache.github.io). This class is still under heavy development and works more like proof of concept at the moment. Things will change quickly and might break things.
@@ -16,9 +16,9 @@ Please check depencies down below and examples folder for configuration and usag
 
 ## HTML conversion
 
-Current HTML conversion is basic and only supports singular runs of bold, itallic and underlined text and no combination of these. It requires all values non html to be escaped with 
+Current HTML conversion is basic and only supports singular runs of bold, itallic and underlined text and no combination of these. It requires all values non html to be escaped with
 `htmlspecialchars($value, ENT_COMPAT, 'UTF-8');`
-and a prefix of 
+and a prefix of
 `*[[DONOTESCAPE]]*`
 so the class knows not to escape the html before it is converted to openXML.
 
@@ -27,7 +27,7 @@ so the class knows not to escape the html before it is converted to openXML.
 
 The image needs to be a reachable URL with a image in a supported format. The url value needs to be placed into the alt text description field of the image.
 Images will be resampled to the constraints of the placeholder image.
-The Image value needs to be formated the with pseudo tags around, such as: 
+The Image value needs to be formated the with pseudo tags around, such as:
 `[IMG-REPLACE]http://placehold.it/350x150[/IMG-REPLACE]`
 
 ## Example
