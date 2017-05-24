@@ -200,28 +200,24 @@ class DocxMustache
 
         //iterate through all drawing containers of the xml document
         foreach ($main_file->xpath('//w:drawing') as $k=>$drawing) {
-            $ueid = 'wrklstId'.$newIdCounter;
-            $wasId = (string) $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])['embed'];
-            $imgs_replaced[$wasId] = $wasId;
-            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])['embed'] = $ueid;
-
-            $cx = (int) $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()['cx'];
-            $cy = (int) $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()['cy'];
-
             //figure out if there is a URL saved in the description field of the img
             $img_url = $this->AnalyseImgUrlString((string) $drawing->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr']);
-            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr'] = $img_url['rest'];
-
-            //check https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/
-            // for EMUs calculation
-            /*
-            295px @72 dpi = 1530350 EMUs = Multiplier for 72dpi pixels 5187.627118644067797
-            413px @72 dpi = 2142490 EMUs = Multiplier for 72dpi pixels 5187.627118644067797
-
-            */
+            //$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr'] = $img_url['rest'];
 
             //if there is a url, save this img as a img to be replaced
-            if (trim($img_url['url'])) {
+            if (trim(str_replace(['http:', ' '], '', $img_url['url']))) {
+                $ueid = 'wrklstId'.$newIdCounter;
+                $wasId = (string) $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])['embed'];
+
+                //get dimensions
+                $cx = (int) $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()['cx'];
+                $cy = (int) $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])->xfrm->ext->attributes()['cy'];
+
+                //remember img as being replaced
+                $imgs_replaced[$wasId] = $wasId;
+                //set new img id
+                $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])['embed'] = $ueid;
+
                 $imgs[] = [
                     'cx'     => (int) $cx,
                     'cy'     => (int) $cy,
@@ -229,7 +225,7 @@ class DocxMustache
                     'id'     => $ueid,
                     'url'    => $img_url['url'],
                 ];
-
+                Log::info($img_url['url']);
                 $newIdCounter++;
             }
         }
@@ -275,29 +271,25 @@ class DocxMustache
                 $sxe->addAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image');
                 $sxe->addAttribute('Target', 'media/'.$imgs[$k]['img_file_dest']);
 
-                //update height and width of image in document.xml
-                $new_height_emus = (int) ($resampled_img['height'] * 5187.627118644067797);
-                $new_width_emus = (int) ($resampled_img['width'] * 5187.627118644067797);
-
                 foreach ($main_file->xpath('//w:drawing') as $k=>$drawing) {
                     if ($img['id'] == $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
                         ->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])
                         ->blip->attributes($ns['r'])['embed']) {
                         $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
                             ->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])
-                            ->xfrm->ext->attributes()['cx'] = $new_width_emus;
+                            ->xfrm->ext->attributes()['cx'] = $resampled_img['width_emus'];
                         $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
                             ->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])
-                            ->xfrm->ext->attributes()['cy'] = $new_height_emus;
-                        //anchored images
+                            ->xfrm->ext->attributes()['cy'] = $resampled_img['height_emus'];
+                        //anchor images
                         if (isset($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor)) {
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()['cx'] = $new_width_emus;
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()['cy'] = $new_height_emus;
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()['cx'] = $resampled_img['width_emus'];
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()['cy'] = $resampled_img['height_emus'];
                         }
-                        //inlined images
+                        //inline images
                         elseif (isset($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline)) {
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()['cx'] = $new_width_emus;
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()['cy'] = $new_height_emus;
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()['cx'] = $resampled_img['width_emus'];
+                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()['cy'] = $resampled_img['height_emus'];
                         }
 
                         break;

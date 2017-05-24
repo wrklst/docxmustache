@@ -47,6 +47,13 @@ class DocImage
 
         $imgWidth = $img_rework->width();
         $imgHeight = $img_rework->height();
+
+        //check https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/
+        // for EMUs calculation
+        /*
+        295px @72 dpi = 1530350 EMUs = Multiplier for 72dpi pixels 5187.627118644067797
+        413px @72 dpi = 2142490 EMUs = Multiplier for 72dpi pixels 5187.627118644067797
+        */
         $availableWidth = (int) ($imgs[$k]['cx'] / 5187.627118644067797);
         $availableHeight = (int) ($imgs[$k]['cy'] / 5187.627118644067797);
 
@@ -76,6 +83,8 @@ class DocImage
         return [
             'height' => $new_height,
             'width'  => $new_width,
+            'height_emus' => (int)($new_height*5187.627118644067797),
+            'width_emus' => (int)($new_width*5187.627118644067797),
         ];
     }
 }
