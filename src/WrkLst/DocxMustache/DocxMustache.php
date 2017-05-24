@@ -202,7 +202,7 @@ class DocxMustache
         foreach ($main_file->xpath('//w:drawing') as $k=>$drawing) {
             //figure out if there is a URL saved in the description field of the img
             $img_url = $this->AnalyseImgUrlString($drawing->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr']);
-            //$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr'] = $img_url['rest'];
+            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr'] = $img_url['rest'];
 
             //if there is a url, save this img as a img to be replaced
             if ($img_url['valid_url']) {
