@@ -83,8 +83,8 @@ class DocImage
         return [
             'height' => $new_height,
             'width'  => $new_width,
-            'height_emus' => (int)($new_height*5187.627118644067797),
-            'width_emus' => (int)($new_width*5187.627118644067797),
+            'height_emus' => (int) ($new_height * 5187.627118644067797),
+            'width_emus' => (int) ($new_width * 5187.627118644067797),
         ];
     }
 }
