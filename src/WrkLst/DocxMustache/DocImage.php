@@ -54,13 +54,12 @@ class DocImage
         $w = (($imgWidth / $imgHeight) * $h);
 
         //if height based resize has too large width, do width based resize
-        if ($w>$availableWidth)
+        if($h>$availableHeight)
         {
-            $w = (($imgWidth / $imgHeight) * $availableWidth);
+            $w = (($imgWidth / $imgHeight) * $availableHeight);
             $h = (($imgHeight / $imgWidth) * $w);
         }
 
-        //only resize one value, aspectRatio() takes care of the other
         $h = null;
 
         $img_rework->resize($w, $h, function ($constraint) {
