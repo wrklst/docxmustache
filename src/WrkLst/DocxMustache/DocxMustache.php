@@ -362,7 +362,7 @@ class DocxMustache
             $valid = true;
 
             //TODO: create a better url validity check
-            if (! trim(str_replace(['http', ' '], '', $url)) || $url == str_replace('http', '', $url)) {
+            if (! trim(str_replace(['http', ':', ' '], '', $url)) || $url == str_replace('http', '', $url)) {
                 $valid = false;
             }
         } else {
