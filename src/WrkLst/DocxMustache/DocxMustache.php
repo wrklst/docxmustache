@@ -333,47 +333,47 @@ class DocxMustache
         }
     }
 
-     /**
-      * @param string $string
-      */
-     protected function AnalyseImgUrlString($string)
-     {
-         $string = (string) $string;
-         $start = '[IMG-REPLACE]';
-         $end = '[/IMG-REPLACE]';
-         $valid = false;
+    /**
+     * @param string $string
+     */
+    protected function AnalyseImgUrlString($string)
+    {
+        $string = (string) $string;
+        $start = '[IMG-REPLACE]';
+        $end = '[/IMG-REPLACE]';
+        $valid = false;
 
-         if ($string != str_replace($start, '', $string) && $string == str_replace($start.$end, '', $string)) {
-             $string = ' '.$string;
-             $ini = strpos($string, $start);
-             if ($ini == 0) {
-                 $url = '';
-                 $rest = $string;
-             } else {
-                 $ini += strlen($start);
-                 $len = ((strpos($string, $end, $ini)) - $ini);
-                 $url = substr($string, $ini, $len);
+        if ($string != str_replace($start, '', $string) && $string == str_replace($start.$end, '', $string)) {
+            $string = ' '.$string;
+            $ini = strpos($string, $start);
+            if ($ini == 0) {
+                $url = '';
+                $rest = $string;
+            } else {
+                $ini += strlen($start);
+                $len = ((strpos($string, $end, $ini)) - $ini);
+                $url = substr($string, $ini, $len);
 
-                 $ini = strpos($string, $start);
-                 $len = strpos($string, $end, $ini + strlen($start)) + strlen($end);
-                 $rest = substr($string, 0, $ini).substr($string, $len);
-             }
+                $ini = strpos($string, $start);
+                $len = strpos($string, $end, $ini + strlen($start)) + strlen($end);
+                $rest = substr($string, 0, $ini).substr($string, $len);
+            }
 
-             //TODO: create a better url validity check
-             if (! trim(str_replace(['http:', ' '], '', $url)) || $url == str_replace('http:', '', $url)) {
-                 $valid = false;
-             }
-         } else {
-             $url = '';
-             $rest = str_replace([$start, $end], '', $string);
-         }
+            //TODO: create a better url validity check
+            if (! trim(str_replace(['http:', ' '], '', $url)) || $url == str_replace('http:', '', $url)) {
+                $valid = false;
+            }
+        } else {
+            $url = '';
+            $rest = str_replace([$start, $end], '', $string);
+        }
 
-         return [
-             'url'  => trim($url),
-             'rest' => trim($rest),
-             'valid_url' => $valid,
-         ];
-     }
+        return [
+            'url'  => trim($url),
+            'rest' => trim($rest),
+            'valid_url' => $valid,
+        ];
+    }
 
     public function SaveAsPdf()
     {
