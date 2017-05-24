@@ -348,8 +348,7 @@ class DocxMustache
          $start = '[IMG-REPLACE]';
          $end = '[/IMG-REPLACE]';
 
-         if($string!=str_replace($start,'',$string) && $string==str_replace($start.$end,'',$string))
-         {
+         if($string!=str_replace($start,'',$string) && $string==str_replace($start.$end,'',$string)) {
              $string = ' '.$string;
              $ini = strpos($string, $start);
              if ($ini == 0) {
@@ -364,8 +363,7 @@ class DocxMustache
                  $len = strpos($string, $end, $ini + strlen($start)) + strlen($end);
                  $rest = substr($string, 0, $ini).substr($string, $len);
              }
-         }
-         else {
+         } else {
              $url = '';
              $rest = str_replace(array($start,$end),'',$string);
          }

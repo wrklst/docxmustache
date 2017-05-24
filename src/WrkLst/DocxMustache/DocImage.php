@@ -18,19 +18,20 @@ class DocImage
     {
         $allowed_imgs = $this->AllowedContentTypeImages();
 
-        if (trim($url))
-        if ($img_file_handle = @fopen($url.$manipulation, 'rb')) {
-            $img_data = stream_get_contents($img_file_handle);
-            fclose($img_file_handle);
-            $fi = new \finfo(FILEINFO_MIME);
+        if (trim($url)) {
+            if ($img_file_handle = @fopen($url.$manipulation, 'rb')) {
+                $img_data = stream_get_contents($img_file_handle);
+                fclose($img_file_handle);
+                $fi = new \finfo(FILEINFO_MIME);
 
-            $image_mime = strstr($fi->buffer($img_data), ';', true);
-            //dd($image_mime);
-            if (isset($allowed_imgs[$image_mime])) {
-                return [
-                    'data' => $img_data,
-                    'mime' => $image_mime,
-                ];
+                $image_mime = strstr($fi->buffer($img_data), ';', true);
+                //dd($image_mime);
+                if (isset($allowed_imgs[$image_mime])) {
+                    return [
+                        'data' => $img_data,
+                        'mime' => $image_mime,
+                    ];
+                }
             }
         }
 
@@ -54,8 +55,7 @@ class DocImage
         $w = (($imgWidth / $imgHeight) * $h);
 
         //if height based resize has too large width, do width based resize
-        if($h>$availableHeight)
-        {
+        if($h > $availableHeight) {
             $w = (($imgWidth / $imgHeight) * $availableHeight);
             $h = (($imgHeight / $imgWidth) * $w);
         }
