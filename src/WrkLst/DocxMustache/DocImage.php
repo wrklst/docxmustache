@@ -55,7 +55,7 @@ class DocImage
         $w = (($imgWidth / $imgHeight) * $h);
 
         //if height based resize has too large width, do width based resize
-        if($h > $availableHeight) {
+        if ($h > $availableHeight) {
             $w = (($imgWidth / $imgHeight) * $availableHeight);
             $h = (($imgHeight / $imgWidth) * $w);
         }
