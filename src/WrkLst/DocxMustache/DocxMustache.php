@@ -340,9 +340,9 @@ class DocxMustache
         }
     }
 
-    /**
-     * @param string $string
-     */
+     /**
+      * @param string $string
+      */
      protected function AnalyseImgUrlString($string)
      {
          $start = '[IMG-REPLACE]';
