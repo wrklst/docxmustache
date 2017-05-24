@@ -18,7 +18,8 @@ class DocImage
     {
         $allowed_imgs = $this->AllowedContentTypeImages();
 
-        if ($img_file_handle = fopen($url.$manipulation, 'rb')) {
+        if (trim($url))
+        if ($img_file_handle = @fopen($url.$manipulation, 'rb')) {
             $img_data = stream_get_contents($img_file_handle);
             fclose($img_file_handle);
             $fi = new \finfo(FILEINFO_MIME);
@@ -43,18 +44,24 @@ class DocImage
         //rework img to new size and jpg format
         $img_rework = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']));
 
-        $w = $imgs[$k]['width'];
-        $h = $imgs[$k]['height'];
         $imgWidth = $img_rework->width();
         $imgHeight = $img_rework->height();
         $availableWidth = (int) ($imgs[$k]['cx'] / 5187.627118644067797);
         $availableHeight = (int) ($imgs[$k]['cy'] / 5187.627118644067797);
 
-        if (($imgWidth - $availableWidth) > ($imgHeight - $availableHeight)) {
-            $h = null;
-        } else {
-            $w = null;
+        //height based resize
+        $h = (($imgHeight / $imgWidth) * $availableWidth);
+        $w = (($imgWidth / $imgHeight) * $h);
+
+        //if height based resize has too large width, do width based resize
+        if ($w>$availableWidth)
+        {
+            $w = (($imgWidth / $imgHeight) * $availableWidth);
+            $h = (($imgHeight / $imgWidth) * $w);
         }
+
+        //only resize one value, aspectRatio() takes care of the other
+        $h = null;
 
         $img_rework->resize($w, $h, function ($constraint) {
             $constraint->aspectRatio();

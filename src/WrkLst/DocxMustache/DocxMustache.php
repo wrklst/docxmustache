@@ -225,8 +225,6 @@ class DocxMustache
                 $imgs[] = [
                     'cx'     => (int) $cx,
                     'cy'     => (int) $cy,
-                    'width'  => (int) ($cx / 5187.627118644067797),
-                    'height' => (int) ($cy / 5187.627118644067797),
                     'wasId'  => $wasId,
                     'id'     => $ueid,
                     'url'    => $img_url['url'],
@@ -244,6 +242,7 @@ class DocxMustache
 
     protected function RemoveReplaceImages($imgs_replaced, &$rels_file)
     {
+        //TODO: check if the same img is used at a different position int he file as well, as otherwise broken images are produced.
         //iterate through replaced images and clean rels files from them
         foreach ($imgs_replaced as $img_replaced) {
             $i = 0;
@@ -324,7 +323,8 @@ class DocxMustache
 
         $rels_file = $this->ReadOpenXmlFile('word/_rels/document.xml.rels', 'object');
 
-        $this->RemoveReplaceImages($imgs_replaced, $rels_file);
+        //do not remove until it is checked if the same img is used at a different position int he file as well, as otherwise broken images are produced.
+        //$this->RemoveReplaceImages($imgs_replaced, $rels_file);
 
         //add jpg content type if not set
         $this->AddContentType('jpeg');
@@ -343,30 +343,38 @@ class DocxMustache
     /**
      * @param string $string
      */
-    protected function AnalyseImgUrlString($string)
-    {
-        $start = '[IMG-REPLACE]';
-        $end = '[/IMG-REPLACE]';
-        $string = ' '.$string;
-        $ini = strpos($string, $start);
-        if ($ini == 0) {
-            $url = '';
-            $rest = $string;
-        } else {
-            $ini += strlen($start);
-            $len = ((strpos($string, $end, $ini)) - $ini);
-            $url = substr($string, $ini, $len);
+     protected function AnalyseImgUrlString($string)
+     {
+         $start = '[IMG-REPLACE]';
+         $end = '[/IMG-REPLACE]';
 
-            $ini = strpos($string, $start);
-            $len = strpos($string, $end, $ini + strlen($start)) + strlen($end);
-            $rest = substr($string, 0, $ini).substr($string, $len);
-        }
+         if($string!=str_replace($start,'',$string) && $string==str_replace($start.$end,'',$string))
+         {
+             $string = ' '.$string;
+             $ini = strpos($string, $start);
+             if ($ini == 0) {
+                 $url = '';
+                 $rest = $string;
+             } else {
+                 $ini += strlen($start);
+                 $len = ((strpos($string, $end, $ini)) - $ini);
+                 $url = substr($string, $ini, $len);
 
-        return [
-            'url'  => trim($url),
-            'rest' => trim($rest),
-        ];
-    }
+                 $ini = strpos($string, $start);
+                 $len = strpos($string, $end, $ini + strlen($start)) + strlen($end);
+                 $rest = substr($string, 0, $ini).substr($string, $len);
+             }
+         }
+         else {
+             $url = '';
+             $rest = str_replace(array($start,$end),'',$string);
+         }
+
+         return [
+             'url'  => trim($url),
+             'rest' => trim($rest),
+         ];
+     }
 
     public function SaveAsPdf()
     {
