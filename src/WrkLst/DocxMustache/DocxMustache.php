@@ -201,11 +201,11 @@ class DocxMustache
         //iterate through all drawing containers of the xml document
         foreach ($main_file->xpath('//w:drawing') as $k=>$drawing) {
             //figure out if there is a URL saved in the description field of the img
-            $img_url = $this->AnalyseImgUrlString((string) $drawing->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr']);
+            $img_url = $this->AnalyseImgUrlString($drawing->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr']);
             //$main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr'] = $img_url['rest'];
 
             //if there is a url, save this img as a img to be replaced
-            if (trim(str_replace(['http:', ' '], '', $img_url['url']))) {
+            if ($img_url['valid_url']) {
                 $ueid = 'wrklstId'.$newIdCounter;
                 $wasId = (string) $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])['embed'];
 
@@ -215,6 +215,7 @@ class DocxMustache
 
                 //remember img as being replaced
                 $imgs_replaced[$wasId] = $wasId;
+
                 //set new img id
                 $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])['embed'] = $ueid;
 
@@ -225,7 +226,7 @@ class DocxMustache
                     'id'     => $ueid,
                     'url'    => $img_url['url'],
                 ];
-                Log::info($img_url['url']);
+                
                 $newIdCounter++;
             }
         }
@@ -337,8 +338,10 @@ class DocxMustache
       */
      protected function AnalyseImgUrlString($string)
      {
+         $string = (string) $string;
          $start = '[IMG-REPLACE]';
          $end = '[/IMG-REPLACE]';
+         $valid = false;
 
          if ($string != str_replace($start, '', $string) && $string == str_replace($start.$end, '', $string)) {
              $string = ' '.$string;
@@ -355,6 +358,11 @@ class DocxMustache
                  $len = strpos($string, $end, $ini + strlen($start)) + strlen($end);
                  $rest = substr($string, 0, $ini).substr($string, $len);
              }
+
+             //TODO: create a better url validity check
+             if(!trim(str_replace(['http:', ' '], '', $url)) || $url == str_replace('http:', '', $url)) {
+                 $valid = false;
+             }
          } else {
              $url = '';
              $rest = str_replace([$start, $end], '', $string);
@@ -363,6 +371,7 @@ class DocxMustache
          return [
              'url'  => trim($url),
              'rest' => trim($rest),
+             'valid_url' => $valid,
          ];
      }
 
