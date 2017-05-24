@@ -359,6 +359,8 @@ class DocxMustache
                 $rest = substr($string, 0, $ini).substr($string, $len);
             }
 
+            $valid = true;
+
             //TODO: create a better url validity check
             if (! trim(str_replace(['http:', ' '], '', $url)) || $url == str_replace('http:', '', $url)) {
                 $valid = false;
