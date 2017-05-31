@@ -10,7 +10,7 @@ class HtmlConversion
     public static function convert($value)
     {
         $line_breaks = ['&lt;br /&gt;', '&lt;br/&gt;', '&lt;br&gt;', '<br />', '<br/>', '<br>'];
-        $value = str_replace($line_breaks, '<w:br/>', $value);
+        $value = str_replace($line_breaks, '</w:t><w:br/><w:t>', $value);
 
         $value = self::convertHtmlToOpenXMLTag($value, 'b');
         $value = self::convertHtmlToOpenXMLTag($value, 'i');
