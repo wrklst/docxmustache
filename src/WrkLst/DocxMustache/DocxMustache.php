@@ -205,7 +205,7 @@ class DocxMustache
             $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->xpath('wp:docPr')[0]->attributes()['descr'] = $img_url['rest'];
 
             //if there is a url, save this img as a img to be replaced
-            if ($img_url['valid_url']) {
+            if ($img_url['valid']) {
                 $ueid = 'wrklstId'.$newIdCounter;
                 $wasId = (string) $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])->blip->attributes($ns['r'])['embed'];
 
@@ -225,6 +225,8 @@ class DocxMustache
                     'wasId'  => $wasId,
                     'id'     => $ueid,
                     'url'    => $img_url['url'],
+                    'path'    => $img_url['path'],
+                    'mode'    => $img_url['mode'],
                 ];
 
                 $newIdCounter++;
@@ -261,7 +263,7 @@ class DocxMustache
         //iterate through replacable images
         foreach ($imgs as $k=>$img) {
             //get file type of img and test it against supported imgs
-            if ($imgageData = $docimage->GetImageFromUrl($img['url'], $this->imageManipulation)) {
+            if ($imgageData = $docimage->GetImageFromUrl($img['mode']=='url'?$img['url']:$img['path'], $img['mode']=='url'?$this->imageManipulation:'')) {
                 $imgs[$k]['img_file_src'] = str_replace('wrklstId', 'wrklst_image', $img['id']).$allowed_imgs[$imgageData['mime']];
                 $imgs[$k]['img_file_dest'] = str_replace('wrklstId', 'wrklst_image', $img['id']).'.jpeg';
 
@@ -341,7 +343,11 @@ class DocxMustache
         $string = (string) $string;
         $start = '[IMG-REPLACE]';
         $end = '[/IMG-REPLACE]';
+        $start_local = '[LOCAL_IMG_REPLACE]';
+        $end_local = '[/LOCAL_IMG_REPLACE]';
         $valid = false;
+        $url = '';
+        $path = '';
 
         if ($string != str_replace($start, '', $string) && $string == str_replace($start.$end, '', $string)) {
             $string = ' '.$string;
@@ -365,15 +371,43 @@ class DocxMustache
             if (! trim(str_replace(['http', 'https', ':', ' '], '', $url)) || $url == str_replace('http', '', $url)) {
                 $valid = false;
             }
+            $mode = 'url';
+        } elseif ($string != str_replace($start_local, '', $string) && $string == str_replace($start_local.$end_local, '', $string)) {
+            $string = ' '.$string;
+            $ini = strpos($string, $start_local);
+            if ($ini == 0) {
+                $path = '';
+                $rest = $string;
+            } else {
+                $ini += strlen($start_local);
+                $len = ((strpos($string, $end_local, $ini)) - $ini);
+                $path = str_replace("..","",substr($string, $ini, $len));
+
+                $ini = strpos($string, $start_local);
+                $len = strpos($string, $end_local, $ini + strlen($start)) + strlen($end_local);
+                $rest = substr($string, 0, $ini).substr($string, $len);
+            }
+
+            $valid = true;
+
+            //check if path starts with storage path
+            if (!starts_with($path,storage_path())) {
+                $valid = false;
+            }
+            $mode = 'path';
         } else {
+            $mode = 'nothing';
             $url = '';
-            $rest = str_replace([$start, $end], '', $string);
+            $path = '';
+            $rest = str_replace([$start, $end, $start_local, $end_local], '', $string);
         }
 
         return [
+            'mode' => $mode,
             'url'  => trim($url),
+            'path' => trim($path),
             'rest' => trim($rest),
-            'valid_url' => $valid,
+            'valid' => $valid,
         ];
     }
 
