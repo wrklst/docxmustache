@@ -263,7 +263,7 @@ class DocxMustache
         //iterate through replacable images
         foreach ($imgs as $k=>$img) {
             //get file type of img and test it against supported imgs
-            if ($imgageData = $docimage->GetImageFromUrl($img['mode']=='url'?$img['url']:$img['path'], $img['mode']=='url'?$this->imageManipulation:'')) {
+            if ($imgageData = $docimage->GetImageFromUrl($img['mode'] == 'url' ? $img['url'] : $img['path'], $img['mode'] == 'url' ? $this->imageManipulation : '')) {
                 $imgs[$k]['img_file_src'] = str_replace('wrklstId', 'wrklst_image', $img['id']).$allowed_imgs[$imgageData['mime']];
                 $imgs[$k]['img_file_dest'] = str_replace('wrklstId', 'wrklst_image', $img['id']).'.jpeg';
 
@@ -381,7 +381,7 @@ class DocxMustache
             } else {
                 $ini += strlen($start_local);
                 $len = ((strpos($string, $end_local, $ini)) - $ini);
-                $path = str_replace("..","",substr($string, $ini, $len));
+                $path = str_replace('..', '', substr($string, $ini, $len));
 
                 $ini = strpos($string, $start_local);
                 $len = strpos($string, $end_local, $ini + strlen($start)) + strlen($end_local);
@@ -391,7 +391,7 @@ class DocxMustache
             $valid = true;
 
             //check if path starts with storage path
-            if (!starts_with($path,storage_path())) {
+            if (! starts_with($path, storage_path())) {
                 $valid = false;
             }
             $mode = 'path';
