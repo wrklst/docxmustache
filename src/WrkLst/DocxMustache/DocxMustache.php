@@ -275,7 +275,9 @@ class DocxMustache
                 $sxe->addAttribute('Target', 'media/'.$imgs[$k]['img_file_dest']);
 
                 foreach ($main_file->xpath('//w:drawing') as $k=>$drawing) {
-                    if ($img['id'] == $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
+                    if (isset($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
+                        ->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])
+                        ->blip->attributes($ns['r'])['embed']) && $img['id'] == $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
                         ->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])
                         ->blip->attributes($ns['r'])['embed']) {
                         $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
