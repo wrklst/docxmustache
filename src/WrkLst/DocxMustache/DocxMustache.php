@@ -259,12 +259,10 @@ class DocxMustache
     {
         $docimage = new DocImage();
         $allowed_imgs = $docimage->AllowedContentTypeImages();
-
-
         $image_i = 1;
         //iterate through replacable images
         foreach ($imgs as $k=>$img) {
-            $this->Log('Merge Images into Template - '.round($image_i/count($imgs)*100).'%';
+            $this->Log('Merge Images into Template - '.round($image_i / count($imgs) * 100).'%');
             //get file type of img and test it against supported imgs
             if ($imgageData = $docimage->GetImageFromUrl($img['mode'] == 'url' ? $img['url'] : $img['path'], $img['mode'] == 'url' ? $this->imageManipulation : '')) {
                 $imgs[$k]['img_file_src'] = str_replace('wrklstId', 'wrklst_image', $img['id']).$allowed_imgs[$imgageData['mime']];
