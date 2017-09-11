@@ -104,6 +104,7 @@ class DocxMustache
     protected function ReadOpenXmlFile($file, $type = 'file')
     {
         $this->exctractOpenXmlFile($file);
+        $this->tempChangeProblematicChars($file);
 
         if ($type == 'file') {
             if ($file_contents = \Storage::disk($this->storageDisk)->get($this->local_path.$file)) {
@@ -122,6 +123,8 @@ class DocxMustache
 
     protected function SaveOpenXmlFile($file, $folder, $content)
     {
+        $content = str_replace('%%KAUFUND%%','&',$content);
+
         \Storage::disk($this->storageDisk)
             ->put($this->local_path.$file, $content);
         //add new content to word doc
@@ -138,6 +141,7 @@ class DocxMustache
     {
         if ($xmlString = $xmlObject->asXML()) {
             $this->SaveOpenXmlFile($file, $folder, $xmlString);
+            $this->tempChangeProblematicChars($file, true);
         } else {
             throw new Exception('Cannot generate xml for '.$file);
         }
@@ -161,6 +165,18 @@ class DocxMustache
 
         $this->SaveOpenXmlFile('word/document.xml', 'word', $this->word_doc);
         $this->zipper->close();
+    }
+
+    protected function tempChangeProblematicChars($file, $reverse = false)
+    {
+        $content = \Storage::disk($this->storageDisk)
+            ->get($this->local_path.$file);
+        if(!$reverse)
+            $content = str_replace('&','%%KAUFUND%%',$content);
+        else
+            $content = str_replace('%%KAUFUND%%','&',$content);
+        \Storage::disk($this->storageDisk)
+            ->put($this->local_path.$file, $content);
     }
 
     protected function AddContentType($imageCt = 'jpeg')
