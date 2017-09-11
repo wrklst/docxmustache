@@ -104,8 +104,6 @@ class DocxMustache
     protected function ReadOpenXmlFile($file, $type = 'file')
     {
         $this->exctractOpenXmlFile($file);
-        $this->tempChangeProblematicChars($file);
-
         if ($type == 'file') {
             if ($file_contents = \Storage::disk($this->storageDisk)->get($this->local_path.$file)) {
                 return $file_contents;
@@ -123,8 +121,6 @@ class DocxMustache
 
     protected function SaveOpenXmlFile($file, $folder, $content)
     {
-        $content = str_replace('%%KAUFUND%%','&',$content);
-
         \Storage::disk($this->storageDisk)
             ->put($this->local_path.$file, $content);
         //add new content to word doc
@@ -141,7 +137,6 @@ class DocxMustache
     {
         if ($xmlString = $xmlObject->asXML()) {
             $this->SaveOpenXmlFile($file, $folder, $xmlString);
-            $this->tempChangeProblematicChars($file, true);
         } else {
             throw new Exception('Cannot generate xml for '.$file);
         }
@@ -165,18 +160,6 @@ class DocxMustache
 
         $this->SaveOpenXmlFile('word/document.xml', 'word', $this->word_doc);
         $this->zipper->close();
-    }
-
-    protected function tempChangeProblematicChars($file, $reverse = false)
-    {
-        $content = \Storage::disk($this->storageDisk)
-            ->get($this->local_path.$file);
-        if(!$reverse)
-            $content = str_replace('&','%%KAUFUND%%',$content);
-        else
-            $content = str_replace('%%KAUFUND%%','&',$content);
-        \Storage::disk($this->storageDisk)
-            ->put($this->local_path.$file, $content);
     }
 
     protected function AddContentType($imageCt = 'jpeg')
@@ -325,6 +308,7 @@ class DocxMustache
         $this->Log('Merge Images into Template');
 
         //load main doc xml
+        $this->word_doc = str_replace('&','%%KAUFUND%%',$this->word_doc);
         $main_file = simplexml_load_string($this->word_doc);
 
         //get all namespaces of the document
@@ -347,6 +331,7 @@ class DocxMustache
         $this->SaveOpenXmlObjectToFile($rels_file, 'word/_rels/document.xml.rels', 'word/_rels');
 
         if ($main_file_xml = $main_file->asXML()) {
+            $main_file_xml = str_replace('%%KAUFUND%%','&',$main_file_xml);
             $this->word_doc = $main_file_xml;
         } else {
             throw new Exception('Cannot generate xml for word/document.xml.');
