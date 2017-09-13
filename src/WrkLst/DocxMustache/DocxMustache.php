@@ -308,7 +308,6 @@ class DocxMustache
         $this->Log('Merge Images into Template');
 
         //load main doc xml
-        $this->word_doc = str_replace('&','%%KAUFUND%%',$this->word_doc);
         $main_file = simplexml_load_string($this->word_doc);
 
         //get all namespaces of the document
@@ -331,7 +330,6 @@ class DocxMustache
         $this->SaveOpenXmlObjectToFile($rels_file, 'word/_rels/document.xml.rels', 'word/_rels');
 
         if ($main_file_xml = $main_file->asXML()) {
-            $main_file_xml = str_replace('%%KAUFUND%%','&',$main_file_xml);
             $this->word_doc = $main_file_xml;
         } else {
             throw new Exception('Cannot generate xml for word/document.xml.');
