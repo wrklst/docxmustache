@@ -41,13 +41,13 @@ class HtmlConversion
             $value_array[] = $tag_open_values[0];
             $value_array[] = '</w:t></w:r>';
 
-            if ($tag=="u") {
+            if ($tag == 'u') {
                 $tag_ooxml = 'u w:val="single" ';
                 $loose_formatting = '';
-            } elseif ($tag == "b" || $tag == "strong") {
+            } elseif ($tag == 'b' || $tag == 'strong') {
                 $tag_ooxml = 'b ';
                 $loose_formatting = '';
-            } elseif ($tag == "i" || $tag == "em") {
+            } elseif ($tag == 'i' || $tag == 'em') {
                 $tag_ooxml = 'i ';
                 $loose_formatting = '<w:i w:val="0"/>';
             }
