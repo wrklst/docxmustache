@@ -41,15 +41,15 @@ class HtmlConversion
             $value_array[] = $tag_open_values[0];
             $value_array[] = '</w:t></w:r>';
 
-            if($tag=="u") {
+            if ($tag=="u") {
                 $tag_ooxml = 'u w:val="single" ';
-                $loose_formatting = "";
-            } elseif($tag=="b"||$tag=="strong") {
+                $loose_formatting = '';
+            } elseif ($tag=="b" || $tag=="strong") {
                 $tag_ooxml = 'b ';
-                $loose_formatting = "";
-            } elseif($tag=="i"||$tag=="em") {
+                $loose_formatting = '';
+            } elseif ($tag=="i" || $tag=="em") {
                 $tag_ooxml = 'i ';
-                $loose_formatting = "<w:i w:val=\"0\"/>";
+                $loose_formatting = '<w:i w:val="0"/>';
             }
 
             //define styling parameters
@@ -57,7 +57,6 @@ class HtmlConversion
             $wrPr_close = strrpos($tag_open_values[0], '</w:rPr>', $wrPr_open);
             $neutral_style = '<w:r><w:rPr>'.substr($tag_open_values[0], ($wrPr_open + 7), ($wrPr_close - ($wrPr_open + 7))).'</w:rPr><w:t xml:space="preserve">';
             $tagged_style = '<w:r><w:rPr><w:'.$tag_ooxml.'/>'.str_replace($loose_formatting, '', substr($tag_open_values[0], ($wrPr_open + 7), ($wrPr_close - ($wrPr_open + 7)))).'</w:rPr><w:t xml:space="preserve">';
-
 
             //open new text run and make it bold, include previous styling
             $value_array[] = $tagged_style;
