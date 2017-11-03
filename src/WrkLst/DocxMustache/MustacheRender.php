@@ -13,7 +13,7 @@ class MustacheRender
         $m = new \Mustache_Engine(['escape' => function ($value) {
             if (str_replace('*[[DONOTESCAPE]]*', '', $value) != $value) {
                 $value = str_replace('&', '&amp;', $value);
-                
+
                 return str_replace('*[[DONOTESCAPE]]*', '', $value);
             }
 

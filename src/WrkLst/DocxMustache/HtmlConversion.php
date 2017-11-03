@@ -44,10 +44,10 @@ class HtmlConversion
             if ($tag=="u") {
                 $tag_ooxml = 'u w:val="single" ';
                 $loose_formatting = '';
-            } elseif ($tag=="b" || $tag=="strong") {
+            } elseif ($tag == "b" || $tag == "strong") {
                 $tag_ooxml = 'b ';
                 $loose_formatting = '';
-            } elseif ($tag=="i" || $tag=="em") {
+            } elseif ($tag == "i" || $tag == "em") {
                 $tag_ooxml = 'i ';
                 $loose_formatting = '<w:i w:val="0"/>';
             }
