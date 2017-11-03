@@ -418,7 +418,7 @@ class DocxMustache
     {
         $this->Log('Converting DOCX to PDF');
         //convert to pdf with libre office
-        $process = \Symfony\Component\Process\SymfonyProcessBuilder::create([
+        $process = \Symfony\Component\Process\ProcessBuilder::create([
             'soffice',
             '--headless',
             '--convert-to',
