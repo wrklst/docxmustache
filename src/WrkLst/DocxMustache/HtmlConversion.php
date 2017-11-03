@@ -15,6 +15,8 @@ class HtmlConversion
         $value = self::convertHtmlToOpenXMLTag($value, 'b');
         $value = self::convertHtmlToOpenXMLTag($value, 'i');
         $value = self::convertHtmlToOpenXMLTag($value, 'u');
+        $value = self::convertHtmlToOpenXMLTag($value, 'strong');
+        $value = self::convertHtmlToOpenXMLTag($value, 'em');
 
         return $value;
     }
@@ -49,7 +51,17 @@ class HtmlConversion
                 $tag_ooxml = 'b ';
                 $loose_formatting = "";
             }
+            elseif($tag=="strong")
+            {
+                $tag_ooxml = 'b ';
+                $loose_formatting = "";
+            }
             elseif($tag=="i")
+            {
+                $tag_ooxml = 'i ';
+                $loose_formatting = "<w:i w:val=\"0\"/>";
+            }
+            elseif($tag=="em")
             {
                 $tag_ooxml = 'i ';
                 $loose_formatting = "<w:i w:val=\"0\"/>";
