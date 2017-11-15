@@ -307,34 +307,41 @@ class DocxMustache
 
     protected function ImageReplacer()
     {
-        $this->Log('Merge Images into Template');
+        $this->Log('Load XML Document to Merge Images');
 
         //load main doc xml
-        $main_file = simplexml_load_string($this->word_doc);
+        if($main_file = @simplexml_load_string($this->word_doc))
+        {
+            $this->Log('Merge Images into Template');
 
-        //get all namespaces of the document
-        $ns = $main_file->getNamespaces(true);
+            //get all namespaces of the document
+            $ns = $main_file->getNamespaces(true);
 
-        $replaceableImage = $this->FetchReplaceableImages($main_file, $ns);
-        $imgs = $replaceableImage['imgs'];
-        $imgs_replaced = $replaceableImage['imgs_replaced'];
+            $replaceableImage = $this->FetchReplaceableImages($main_file, $ns);
+            $imgs = $replaceableImage['imgs'];
+            $imgs_replaced = $replaceableImage['imgs_replaced'];
 
-        $rels_file = $this->ReadOpenXmlFile('word/_rels/document.xml.rels', 'object');
+            $rels_file = $this->ReadOpenXmlFile('word/_rels/document.xml.rels', 'object');
 
-        //do not remove until it is checked if the same img is used at a different position int he file as well, as otherwise broken images are produced.
-        //$this->RemoveReplaceImages($imgs_replaced, $rels_file);
+            //do not remove until it is checked if the same img is used at a different position int he file as well, as otherwise broken images are produced.
+            //$this->RemoveReplaceImages($imgs_replaced, $rels_file);
 
-        //add jpg content type if not set
-        $this->AddContentType('jpeg');
+            //add jpg content type if not set
+            $this->AddContentType('jpeg');
 
-        $this->InsertImages($ns, $imgs, $rels_file, $main_file);
+            $this->InsertImages($ns, $imgs, $rels_file, $main_file);
 
-        $this->SaveOpenXmlObjectToFile($rels_file, 'word/_rels/document.xml.rels', 'word/_rels');
+            $this->SaveOpenXmlObjectToFile($rels_file, 'word/_rels/document.xml.rels', 'word/_rels');
 
-        if ($main_file_xml = $main_file->asXML()) {
-            $this->word_doc = $main_file_xml;
-        } else {
-            throw new Exception('Cannot generate xml for word/document.xml.');
+            if ($main_file_xml = $main_file->asXML()) {
+                $this->word_doc = $main_file_xml;
+            } else {
+                throw new Exception('Cannot generate xml for word/document.xml.');
+            }
+        }
+        else
+        {
+            $this->Log('Error: Could not load XML file.');
         }
     }
 
