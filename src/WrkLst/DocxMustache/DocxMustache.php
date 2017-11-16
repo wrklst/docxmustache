@@ -310,7 +310,10 @@ class DocxMustache
         $this->Log('Load XML Document to Merge Images');
 
         //load main doc xml
-        if($main_file = @simplexml_load_string($this->word_doc))
+        libxml_use_internal_errors(true);
+        $main_file = simplexml_load_string($this->word_doc);
+
+        if(gettype($main_file) == "object")
         {
             $this->Log('Merge Images into Template');
 
@@ -341,7 +344,13 @@ class DocxMustache
         }
         else
         {
-            $this->Log('Error: Could not load XML file.');
+            $xmlerror = '';
+            foreach (libxml_get_errors() as $error) {
+                // handle errors here
+                $xmlerror .= $error;
+            }
+            $this->Log('Error: Could not load XML file. '.$xmlerror);
+            libxml_clear_errors();
         }
     }
 
