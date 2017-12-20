@@ -81,6 +81,6 @@ class HtmlConversion
             $value = self::convertHtmlToOpenXMLTag($value, $tag);
         }
 
-        return $value;
+        return str_replace("<w:t>",'<w:t xml:space="preserve">',$value);
     }
 }
