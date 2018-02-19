@@ -442,7 +442,8 @@ class DocxMustache
             $this->StoragePath($this->local_path.$this->template_file_name),
             '--outdir',
             $this->StoragePath($this->local_path),
-        ])->start();
+        ]);
+        $process->start();
         while ($process->isRunning()) {
             //wait until process is ready
         }
