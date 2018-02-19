@@ -434,7 +434,7 @@ class DocxMustache
     {
         $this->Log('Converting DOCX to PDF');
         //convert to pdf with libre office
-        $process = \Symfony\Component\Process\ProcessBuilder::create([
+        $process = new \Symfony\Component\Process\Process([
             'soffice',
             '--headless',
             '--convert-to',
@@ -442,8 +442,7 @@ class DocxMustache
             $this->StoragePath($this->local_path.$this->template_file_name),
             '--outdir',
             $this->StoragePath($this->local_path),
-        ])->getProcess();
-        $process->start();
+        ])->start();
         while ($process->isRunning()) {
             //wait until process is ready
         }
