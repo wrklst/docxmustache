@@ -345,13 +345,47 @@ class DocxMustache
         else
         {
             $xmlerror = '';
-            foreach (libxml_get_errors() as $error) {
+            $errors = libxml_get_errors();
+            foreach ($errors as $error) {
                 // handle errors here
-                $xmlerror .= $error;
+                $xmlerror .= $this->display_xml_error($error, explode("\n", $this->word_doc));
             }
+            libxml_clear_errors();
             $this->Log('Error: Could not load XML file. '.$xmlerror);
             libxml_clear_errors();
         }
+    }
+
+    /*
+    example for extracting xml errors from
+    http://php.net/manual/en/function.libxml-get-errors.php
+    */
+    protected function display_xml_error($error, $xml)
+    {
+        $return  = $xml[$error->line - 1] . "\n";
+        $return .= str_repeat('-', $error->column) . "^\n";
+
+        switch ($error->level) {
+            case LIBXML_ERR_WARNING:
+                $return .= "Warning $error->code: ";
+                break;
+             case LIBXML_ERR_ERROR:
+                $return .= "Error $error->code: ";
+                break;
+            case LIBXML_ERR_FATAL:
+                $return .= "Fatal Error $error->code: ";
+                break;
+        }
+
+        $return .= trim($error->message) .
+                   "\n  Line: $error->line" .
+                   "\n  Column: $error->column";
+
+        if ($error->file) {
+            $return .= "\n  File: $error->file";
+        }
+
+        return "$return\n\n--------------------------------------------\n\n";
     }
 
     /**

@@ -1,5 +1,5 @@
 ![DocxMutache Logo](https://github.com/wrklst/docxmustache/raw/master/example/logo.png)
-# DocxMustache *for Laravel 5.4*
+# DocxMustache *for Laravel 5.6*
 
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE) [![Quality Score](https://img.shields.io/scrutinizer/g/wrklst/docxmustache.svg?style=flat-square&b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/build-status/master)
 [![StyleCI](https://styleci.io/repos/90483440/shield?branch=master)](https://styleci.io/repos/90483440)
@@ -16,7 +16,7 @@ Please check depencies down below and examples folder for configuration and usag
 
 ## HTML conversion
 
-Current HTML conversion is basic and only supports singular runs of bold, itallic and underlined text and no combination of these. It requires all values non html to be escaped with
+Current HTML conversion is basic and only supports singular runs of bold, italic and underlined text and no combination of these. It requires all values non html to be escaped with
 `htmlspecialchars($value, ENT_COMPAT, 'UTF-8');`
 and a prefix of
 `*[[DONOTESCAPE]]*`
