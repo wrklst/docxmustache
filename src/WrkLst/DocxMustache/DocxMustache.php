@@ -39,10 +39,10 @@ class DocxMustache
         $this->verbose = false;
     }
 
-    public function Execute()
+    public function Execute($dpi=72)
     {
         $this->CopyTmplate();
-        $this->ReadTeamplate();
+        $this->ReadTeamplate($dpi);
     }
 
     /**
@@ -142,7 +142,7 @@ class DocxMustache
         }
     }
 
-    public function ReadTeamplate()
+    public function ReadTeamplate($dpi)
     {
         $this->Log('Analyze Template');
         //get the main document out of the docx archive
@@ -154,7 +154,7 @@ class DocxMustache
 
         $this->word_doc = HtmlConversion::convert($this->word_doc);
 
-        $this->ImageReplacer();
+        $this->ImageReplacer($dpi);
 
         $this->Log('Compact Template with Data');
 
@@ -254,7 +254,7 @@ class DocxMustache
         }
     }
 
-    protected function InsertImages($ns, &$imgs, &$rels_file, &$main_file)
+    protected function InsertImages($ns, &$imgs, &$rels_file, &$main_file, $dpi)
     {
         $docimage = new DocImage();
         $allowed_imgs = $docimage->AllowedContentTypeImages();
@@ -267,7 +267,7 @@ class DocxMustache
                 $imgs[$k]['img_file_src'] = str_replace('wrklstId', 'wrklst_image', $img['id']).$allowed_imgs[$imgageData['mime']];
                 $imgs[$k]['img_file_dest'] = str_replace('wrklstId', 'wrklst_image', $img['id']).'.jpeg';
 
-                $resampled_img = $docimage->ResampleImage($this, $imgs, $k, $imgageData['data']);
+                $resampled_img = $docimage->ResampleImage($this, $imgs, $k, $imgageData['data'], $dpi);
 
                 $sxe = $rels_file->addChild('Relationship');
                 $sxe->addAttribute('Id', $img['id']);
@@ -305,7 +305,7 @@ class DocxMustache
         }
     }
 
-    protected function ImageReplacer()
+    protected function ImageReplacer($dpi)
     {
         $this->Log('Load XML Document to Merge Images');
 
@@ -332,7 +332,7 @@ class DocxMustache
             //add jpg content type if not set
             $this->AddContentType('jpeg');
 
-            $this->InsertImages($ns, $imgs, $rels_file, $main_file);
+            $this->InsertImages($ns, $imgs, $rels_file, $main_file, $dpi);
 
             $this->SaveOpenXmlObjectToFile($rels_file, 'word/_rels/document.xml.rels', 'word/_rels');
 
