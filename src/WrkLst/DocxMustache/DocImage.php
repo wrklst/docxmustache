@@ -44,6 +44,7 @@ class DocImage
 
         //rework img to new size and jpg format
         $img_rework = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']));
+        $img_rework2 = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']));
 
         $imgWidth = $img_rework->width();
         $imgHeight = $img_rework->height();
@@ -69,14 +70,31 @@ class DocImage
 
         $h = null;
 
+        //for getting non high dpi measurements, as the document is on 72 dpi.
+        //TODO: this should be improved. it does not really need the resampling to identify the new sizes.
+        //instead this should just be calculated, as resampling the image is too process instensive.
         $img_rework->resize($w, $h, function ($constraint) {
             $constraint->aspectRatio();
             $constraint->upsize();
         });
-
         $new_height = $img_rework->height();
         $new_width = $img_rework->width();
-        $img_rework->save($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+
+        //for storing the image in high dpi, so it has good quality on high dpi screens
+        $high_dpi = 160;
+        $img_rework2->resize(((int)$w*($high_dpi/72)), $h, function ($constraint) { // make high dpi version for actual storage
+            $constraint->aspectRatio();
+            $constraint->upsize();
+        });
+        $img_rework2->save($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+
+        //set dpi of image to high dpi
+        $im = new \imagick();
+        $im->setResolution($high_dpi,$high_dpi);
+        $im->readImage($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+        $im->writeImage($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+        $im->clear();
+        $im->destroy();
 
         $parent->zipper->folder('word/media')->add($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
 
