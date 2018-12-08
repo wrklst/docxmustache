@@ -50,7 +50,10 @@ class DocxMustache
      */
     public function StoragePath($file)
     {
-        return storage_path($file);
+        //dump($this->storageDisk.$file);
+        //return $this->storageDisk.'/'.$file;
+        return \Storage::disk($this->storageDisk)->path($file);
+        //return storage_path($file);
     }
 
     /**
@@ -92,12 +95,13 @@ class DocxMustache
     {
         $this->Log('Get Copy of Template');
         $this->local_path = $this->GetTmpDir();
-        \Storage::disk($this->storageDisk)->copy($this->storagePathPrefix.$this->template_file, $this->local_path.$this->template_file_name);
+        \Storage::disk($this->storageDisk)->copy($this->template_file, $this->local_path.$this->template_file_name);
     }
 
     protected function exctractOpenXmlFile($file)
     {
-        $this->zipper->make($this->StoragePath($this->local_path.$this->template_file_name))
+        $this->zipper
+            ->make($this->StoragePath($this->local_path.$this->template_file_name))
             ->extractTo($this->StoragePath($this->local_path), [$file], \Chumper\Zipper\Zipper::WHITELIST);
     }
 
