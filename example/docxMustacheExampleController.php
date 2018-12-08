@@ -10,7 +10,7 @@ class docxMustacheExampleController extends Controller
     public function index(Request $request)
     {
         //copy the example doc file into your storage directory or corret this path
-        $local_template_file = storage_path('example_template.docx');
+        $local_template_file = 'example_template.docx';
 
         //define date to be replaced
         $data = [
@@ -36,6 +36,7 @@ class docxMustacheExampleController extends Controller
 
         //optionally change some setting before the class gets executed
         $docx_creation->storageDisk = 'local';
+        $docx_creation->storagePathPrefix = 'temp/';
 
         //execute class
         $docx_creation->execute();
