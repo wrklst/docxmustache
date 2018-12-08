@@ -50,10 +50,7 @@ class DocxMustache
      */
     public function StoragePath($file)
     {
-        //dump($this->storageDisk.$file);
-        //return $this->storageDisk.'/'.$file;
         return \Storage::disk($this->storageDisk)->path($file);
-        //return storage_path($file);
     }
 
     /**
