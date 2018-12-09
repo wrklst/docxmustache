@@ -1,7 +1,4 @@
 preset: laravel
-
-linting: true
-
 finder:
   exclude:
     - "example"
