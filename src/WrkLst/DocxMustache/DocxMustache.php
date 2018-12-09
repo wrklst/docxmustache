@@ -39,7 +39,7 @@ class DocxMustache
         $this->verbose = false;
     }
 
-    public function Execute($dpi=72)
+    public function Execute($dpi = 72)
     {
         $this->CopyTmplate();
         $this->ReadTeamplate($dpi);
@@ -314,8 +314,7 @@ class DocxMustache
         libxml_use_internal_errors(true);
         $main_file = simplexml_load_string($this->word_doc);
 
-        if(gettype($main_file) == "object")
-        {
+        if (gettype($main_file) == 'object') {
             $this->Log('Merge Images into Template');
 
             //get all namespaces of the document
@@ -342,9 +341,7 @@ class DocxMustache
             } else {
                 throw new Exception('Cannot generate xml for word/document.xml.');
             }
-        }
-        else
-        {
+        } else {
             $xmlerror = '';
             $errors = libxml_get_errors();
             foreach ($errors as $error) {
@@ -363,8 +360,8 @@ class DocxMustache
     */
     protected function display_xml_error($error, $xml)
     {
-        $return  = $xml[$error->line - 1] . "\n";
-        $return .= str_repeat('-', $error->column) . "^\n";
+        $return = $xml[$error->line - 1]."\n";
+        $return .= str_repeat('-', $error->column)."^\n";
 
         switch ($error->level) {
             case LIBXML_ERR_WARNING:
@@ -378,8 +375,8 @@ class DocxMustache
                 break;
         }
 
-        $return .= trim($error->message) .
-                   "\n  Line: $error->line" .
+        $return .= trim($error->message).
+                   "\n  Line: $error->line".
                    "\n  Column: $error->column";
 
         if ($error->file) {
