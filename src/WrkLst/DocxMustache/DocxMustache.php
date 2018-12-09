@@ -167,7 +167,7 @@ class DocxMustache
     {
         $ct_file = $this->ReadOpenXmlFile('[Content_Types].xml', 'object');
 
-        if (! ($ct_file instanceof \Traversable)) {
+        if (!($ct_file instanceof \Traversable)) {
             throw new Exception('Cannot traverse through [Content_Types].xml.');
         }
 
@@ -183,7 +183,7 @@ class DocxMustache
 
         //if content type for jpg has not been set, add it to xml
         // and save xml to file and add it to the archive
-        if (! $ct_already_set) {
+        if (!$ct_already_set) {
             $sxe = $ct_file->addChild('Default');
             $sxe->addAttribute('Extension', $imageCt);
             $sxe->addAttribute('ContentType', 'image/'.$imageCt);
@@ -367,7 +367,7 @@ class DocxMustache
             case LIBXML_ERR_WARNING:
                 $return .= "Warning $error->code: ";
                 break;
-             case LIBXML_ERR_ERROR:
+                case LIBXML_ERR_ERROR:
                 $return .= "Error $error->code: ";
                 break;
             case LIBXML_ERR_FATAL:
@@ -376,8 +376,8 @@ class DocxMustache
         }
 
         $return .= trim($error->message).
-                   "\n  Line: $error->line".
-                   "\n  Column: $error->column";
+                    "\n  Line: $error->line".
+                    "\n  Column: $error->column";
 
         if ($error->file) {
             $return .= "\n  File: $error->file";
@@ -419,7 +419,7 @@ class DocxMustache
             $valid = true;
 
             //TODO: create a better url validity check
-            if (! trim(str_replace(['http', 'https', ':', ' '], '', $url)) || $url == str_replace('http', '', $url)) {
+            if (!trim(str_replace(['http', 'https', ':', ' '], '', $url)) || $url == str_replace('http', '', $url)) {
                 $valid = false;
             }
             $mode = 'url';
@@ -442,7 +442,7 @@ class DocxMustache
             $valid = true;
 
             //check if path starts with storage path
-            if (! starts_with($path, storage_path())) {
+            if (!starts_with($path, storage_path())) {
                 $valid = false;
             }
             $mode = 'path';
@@ -480,7 +480,7 @@ class DocxMustache
             //wait until process is ready
         }
         // executes after the command finishes
-        if (! $process->isSuccessful()) {
+        if (!$process->isSuccessful()) {
             throw new \Symfony\Component\Process\Exception\ProcessFailedException($process);
         } else {
             $path_parts = pathinfo($this->StoragePath($this->local_path.$this->template_file_name));

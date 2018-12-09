@@ -75,7 +75,7 @@ class DocImage
         //for getting non high dpi measurements, as the document is on 72 dpi.
         //TODO: this should be improved. it does not really need the resampling to identify the new sizes.
         //instead this should just be calculated, as resampling the image is too process instensive.
-        $img_rework->resize($w, $h, function ($constraint) {
+        $img_rework->resize($w, $h, function($constraint) {
             $constraint->aspectRatio();
             $constraint->upsize();
         });
@@ -84,7 +84,7 @@ class DocImage
 
         if ($dpi != 72) {
             //for storing the image in high dpi, so it has good quality on high dpi screens
-            $img_rework2->resize(((int) $w * ($dpi / 72)), $h, function ($constraint) { // make high dpi version for actual storage
+            $img_rework2->resize(((int) $w * ($dpi / 72)), $h, function($constraint) { // make high dpi version for actual storage
                 $constraint->aspectRatio();
                 $constraint->upsize();
             });
