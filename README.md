@@ -42,7 +42,6 @@ Use `sudo apt install libreoffice-common` on your ubuntu/debian based server. Al
 The package is dependent on several Laravel specific functions. It could easily be ported to other frameworks or be ported to be framework agnostic. In addition to the Laravel dependency, the page uses the following packages:
 
 * [mustache/mustache](https://packagist.org/packages/mustache/mustache)
-* [chumper/zipper](https://github.com/Chumper/Zipper)
 * [intervention/image](http://image.intervention.io) (requires adding [provider and alias](http://image.intervention.io/getting_started/installation#laravel) to your app config as well as gd or imagick, [please check the image intervention webpage for details](http://image.intervention.io/getting_started/installation#laravel))
 
 Laravel specific dependencies (only relevant if ported into non Laravel environment):

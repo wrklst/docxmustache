@@ -25,7 +25,7 @@ class DocxMustache
         $this->template_file_name = basename($local_template_file);
         $this->template_file = $local_template_file;
         $this->word_doc = false;
-        $this->zipper = new \Chumper\Zipper\Zipper();
+        $this->zipper = new \ZipArchive();
 
         //name of disk for storage
         $this->storageDisk = 'local';
@@ -98,8 +98,8 @@ class DocxMustache
     protected function exctractOpenXmlFile($file)
     {
         $this->zipper
-            ->make($this->StoragePath($this->local_path.$this->template_file_name))
-            ->extractTo($this->StoragePath($this->local_path), [$file], \Chumper\Zipper\Zipper::WHITELIST);
+            ->open($this->StoragePath($this->local_path.$this->template_file_name))
+            ->extractTo($this->StoragePath($this->local_path), [$file]);
     }
 
     protected function ReadOpenXmlFile($file, $type = 'file')
@@ -126,11 +126,11 @@ class DocxMustache
             ->put($this->local_path.$file, $content);
         //add new content to word doc
         if ($folder) {
-            $this->zipper->folder($folder)
-                ->add($this->StoragePath($this->local_path.$file));
+            $this->zipper->addEmptyDir($folder)
+                ->addFile($this->StoragePath($this->local_path.$file));
         } else {
             $this->zipper
-                ->add($this->StoragePath($this->local_path.$file));
+                ->addFile($this->StoragePath($this->local_path.$file));
         }
     }
 
@@ -247,7 +247,7 @@ class DocxMustache
             $i = 0;
             foreach ($rels_file as $rel) {
                 if ((string) $rel->attributes()['Id'] == $img_replaced) {
-                    $this->zipper->remove('word/'.(string) $rel->attributes()['Target']);
+                    $this->zipper->deleteName('word/'.(string) $rel->attributes()['Target']);
                     unset($rels_file->Relationship[$i]);
                 }
                 $i++;
