@@ -102,7 +102,8 @@ class DocImage
             $img_rework->save($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
         }
 
-        $parent->zipper->addEmptyDir('word/media')->addFile($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+        $parent->zipper->folder('word/media')->add($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+
 
         return [
             'height' => $new_height,
