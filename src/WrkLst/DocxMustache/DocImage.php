@@ -43,9 +43,9 @@ class DocImage
         \Storage::disk($parent->storageDisk)->put($parent->local_path.'word/media/'.$imgs[$k]['img_file_src'], $data);
 
         //rework img to new size and jpg format
-        $img_rework = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']));
+        $img_rework = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']))->encode('jpg', 80);
         if ($dpi != 72) {
-            $img_rework2 = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']));
+            $img_rework2 = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']))->encode('jpg', 80);
         }
 
         $imgWidth = $img_rework->width();
