@@ -15,6 +15,7 @@ class DocxMustache
     public $local_path;
     public $storageDisk;
     public $storagePathPrefix;
+    public $useStoragePath = false;
     public $zipper;
     public $imageManipulation;
     public $verbose;
@@ -50,6 +51,9 @@ class DocxMustache
      */
     public function StoragePath($file)
     {
+        if ($this->useStoragePath) {
+            return \Storage::disk($this->storageDisk)->path($file);
+        }
         return storage_path($file);
     }
 
