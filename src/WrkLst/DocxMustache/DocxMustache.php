@@ -18,14 +18,14 @@ class DocxMustache
     public $zipper;
     public $imageManipulation;
     public $verbose;
-    
+
     private $filelist;
     private $fileWhitelist = [
         'word/document.xml',
         'word/endnotes.xml',
         'word/footer*.xml',
         'word/footnotes.xml',
-        'word/header*.xml'
+        'word/header*.xml',
     ];
 
     public function __construct($items, $local_template_file)
@@ -52,7 +52,7 @@ class DocxMustache
     {
         $this->CopyTmplate();
         $this->getAllFilesFromDocx();
-        foreach($this->filelist as $file) {
+        foreach ($this->filelist as $file) {
             $this->doInplaceMustache($file);
         }
         $this->ReadTeamplate($dpi);
@@ -101,14 +101,15 @@ class DocxMustache
         return $path;
     }
 
-    public function getAllFilesFromDocx() {
+    public function getAllFilesFromDocx()
+    {
         $filelist = [];
         $fileWhitelist = $this->fileWhitelist;
         $this->zipper
             ->make($this->StoragePath($this->local_path.$this->template_file_name))
             ->getRepository()->each(function ($file, $stats) use ($fileWhitelist, &$filelist) {
-                foreach($fileWhitelist as $pattern) {
-                    if(fnmatch($pattern, $file)) {
+                foreach ($fileWhitelist as $pattern) {
+                    if (fnmatch($pattern, $file)) {
                         $filelist[] = $file;
                     }
                 }
@@ -116,16 +117,17 @@ class DocxMustache
         $this->filelist = $filelist;
     }
 
-    public function doInplaceMustache($file) {
+    public function doInplaceMustache($file)
+    {
         $tempFileContent = $this->zipper
                             ->make($this->StoragePath($this->local_path.$this->template_file_name))
                             ->getFileContent($file);
         $tempFileContent = MustacheRender::render($this->items, $tempFileContent);
         $tempFileContent = HtmlConversion::convert($tempFileContent);
-        $this->zipper->addString($file,$tempFileContent);
+        $this->zipper->addString($file, $tempFileContent);
         $this->zipper->close();
     }
-    
+
     public function CopyTmplate()
     {
         $this->Log('Get Copy of Template');
@@ -205,7 +207,7 @@ class DocxMustache
     {
         $ct_file = $this->ReadOpenXmlFile('[Content_Types].xml', 'object');
 
-        if (!($ct_file instanceof \Traversable)) {
+        if (! ($ct_file instanceof \Traversable)) {
             throw new Exception('Cannot traverse through [Content_Types].xml.');
         }
 
@@ -221,7 +223,7 @@ class DocxMustache
 
         //if content type for jpg has not been set, add it to xml
         // and save xml to file and add it to the archive
-        if (!$ct_already_set) {
+        if (! $ct_already_set) {
             $sxe = $ct_file->addChild('Default');
             $sxe->addAttribute('Extension', $imageCt);
             $sxe->addAttribute('ContentType', 'image/'.$imageCt);
@@ -457,7 +459,7 @@ class DocxMustache
             $valid = true;
 
             //TODO: create a better url validity check
-            if (!trim(str_replace(['http', 'https', ':', ' '], '', $url)) || $url == str_replace('http', '', $url)) {
+            if (! trim(str_replace(['http', 'https', ':', ' '], '', $url)) || $url == str_replace('http', '', $url)) {
                 $valid = false;
             }
             $mode = 'url';
@@ -480,7 +482,7 @@ class DocxMustache
             $valid = true;
 
             //check if path starts with storage path
-            if (!starts_with($path, storage_path())) {
+            if (! starts_with($path, storage_path())) {
                 $valid = false;
             }
             $mode = 'path';
@@ -518,7 +520,7 @@ class DocxMustache
             //wait until process is ready
         }
         // executes after the command finishes
-        if (!$process->isSuccessful()) {
+        if (! $process->isSuccessful()) {
             throw new \Symfony\Component\Process\Exception\ProcessFailedException($process);
         } else {
             $path_parts = pathinfo($this->StoragePath($this->local_path.$this->template_file_name));
