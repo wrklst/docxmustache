@@ -18,6 +18,15 @@ class DocxMustache
     public $zipper;
     public $imageManipulation;
     public $verbose;
+    
+    private $filelist;
+    private $fileWhitelist = [
+        'word/document.xml',
+        'word/endnotes.xml',
+        'word/footer*.xml',
+        'word/footnotes.xml',
+        'word/header*.xml'
+    ];
 
     public function __construct($items, $local_template_file)
     {
@@ -42,6 +51,10 @@ class DocxMustache
     public function Execute($dpi = 72)
     {
         $this->CopyTmplate();
+        $this->getAllFilesFromDocx();
+        foreach($this->filelist as $file) {
+            $this->doInplaceMustache($file);
+        }
         $this->ReadTeamplate($dpi);
     }
 
@@ -88,6 +101,31 @@ class DocxMustache
         return $path;
     }
 
+    public function getAllFilesFromDocx() {
+        $filelist = [];
+        $fileWhitelist = $this->fileWhitelist;
+        $this->zipper
+            ->make($this->StoragePath($this->local_path.$this->template_file_name))
+            ->getRepository()->each(function ($file, $stats) use ($fileWhitelist, &$filelist) {
+                foreach($fileWhitelist as $pattern) {
+                    if(fnmatch($pattern, $file)) {
+                        $filelist[] = $file;
+                    }
+                }
+            });
+        $this->filelist = $filelist;
+    }
+
+    public function doInplaceMustache($file) {
+        $tempFileContent = $this->zipper
+                            ->make($this->StoragePath($this->local_path.$this->template_file_name))
+                            ->getFileContent($file);
+        $tempFileContent = MustacheRender::render($this->items, $tempFileContent);
+        $tempFileContent = HtmlConversion::convert($tempFileContent);
+        $this->zipper->addString($file,$tempFileContent);
+        $this->zipper->close();
+    }
+    
     public function CopyTmplate()
     {
         $this->Log('Get Copy of Template');
