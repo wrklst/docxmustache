@@ -525,7 +525,7 @@ class DocxMustache
         } else {
             $path_parts = pathinfo($this->StoragePath($this->local_path.$this->template_file_name));
 
-            return $this->StoragePath($this->local_path.$path_parts['filename'].'pdf');
+            return $this->StoragePath($this->local_path.$path_parts['filename'].'.pdf');
         }
     }
 }
