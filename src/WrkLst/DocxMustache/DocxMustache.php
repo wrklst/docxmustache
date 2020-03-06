@@ -67,7 +67,8 @@ class DocxMustache
         if ($this->useStoragePath) {
             return \Storage::disk($this->storageDisk)->path($file);
         }
-        return storage_path($file);
+        $pathPrefix = \Storage::disk($this->storageDisk)->getDriver()->getAdapter()->getPathPrefix();
+        return $pathPrefix.$file;
     }
 
     /**
@@ -100,7 +101,7 @@ class DocxMustache
     {
         $this->CleanUpTmpDirs();
         $path = $this->storagePathPrefix.'DocxMustache/'.uniqid($this->template_file).'/';
-        \File::makeDirectory($this->StoragePath($path), 0775, true);
+        \Storage::makeDirectory($path);
 
         return $path;
     }
@@ -141,9 +142,10 @@ class DocxMustache
 
     protected function exctractOpenXmlFile($file)
     {
+        $pathPrefix = \Storage::disk($this->storageDisk)->getDriver()->getAdapter()->getPathPrefix();
         $this->zipper
-            ->make($this->StoragePath($this->local_path.$this->template_file_name))
-            ->extractTo($this->StoragePath($this->local_path), [$file], \Wrklst\Zipper\Zipper::WHITELIST);
+            ->make($pathPrefix.$this->local_path.$this->template_file_name)
+            ->extractTo($pathPrefix.$this->local_path, [$file], \Wrklst\Zipper\Zipper::WHITELIST);
     }
 
     protected function ReadOpenXmlFile($file, $type = 'file')
