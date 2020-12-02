@@ -220,7 +220,7 @@ class DocxMustache
         //check if content type for jpg has been set
         $i = 0;
         $ct_already_set = false;
-        foreach ($ct_file as $ct) {
+        foreach ($ct_file->Default as $ct) {
             if ((string) $ct_file->Default[$i]['Extension'] == $imageCt) {
                 $ct_already_set = true;
             }
