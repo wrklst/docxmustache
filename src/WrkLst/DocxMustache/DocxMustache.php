@@ -29,7 +29,7 @@ class DocxMustache
         'word/header*.xml',
     ];
 
-    public function __construct($items, $local_template_file)
+    public function __construct($items, $local_template_file, $storageDisk = 'local', $storagePathPrefix = 'app/', $imageManipulation='')
     {
         $this->items = $items;
         $this->template_file_name = basename($local_template_file);
@@ -38,13 +38,13 @@ class DocxMustache
         $this->zipper = new \Madnest\Madzipper\Madzipper();
 
         //name of disk for storage
-        $this->storageDisk = 'local';
+        $this->storageDisk = $storageDisk;
 
         //prefix within your storage path
-        $this->storagePathPrefix = 'app/';
+        $this->storagePathPrefix = $storagePathPrefix;
 
         //if you use img urls that support manipulation via parameter
-        $this->imageManipulation = ''; //'&w=1800';
+        $this->imageManipulation = $imageManipulation; //'&w=1800';
 
         $this->verbose = false;
     }
@@ -67,7 +67,7 @@ class DocxMustache
         if ($this->useStoragePath) {
             return \Storage::disk($this->storageDisk)->path($file);
         }
-        $pathPrefix = \Storage::disk($this->storageDisk)->path('');
+        $pathPrefix = \Storage::disk($this->storageDisk)->path(''); //\Storage::disk($this->storageDisk)->getDriver()->getAdapter()->getPathPrefix();
         return $pathPrefix.$file;
     }
 
@@ -100,8 +100,9 @@ class DocxMustache
     public function GetTmpDir()
     {
         $this->CleanUpTmpDirs();
-        $path = $this->storagePathPrefix.'DocxMustache/'.uniqid($this->template_file).'/';
-        \Storage::makeDirectory($path);
+        $pathPrefix = \Storage::disk($this->storageDisk)->path('');
+        $path = $this->storagePathPrefix.'DocxMustache'.uniqid($this->template_file).'/';
+        \Storage::makeDirectory($pathPrefix.$path);
 
         return $path;
     }
@@ -142,7 +143,7 @@ class DocxMustache
 
     protected function exctractOpenXmlFile($file)
     {
-        $pathPrefix = \Storage::disk($this->storageDisk)->path('');
+        $pathPrefix = \Storage::disk($this->storageDisk)->path(''); // \Storage::disk($this->storageDisk)->getDriver()->getAdapter()->getPathPrefix();
         $this->zipper
             ->make($pathPrefix.$this->local_path.$this->template_file_name)
             ->extractTo($pathPrefix.$this->local_path, [$file], \Madnest\Madzipper\Madzipper::WHITELIST);
