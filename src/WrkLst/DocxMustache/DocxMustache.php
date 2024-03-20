@@ -35,7 +35,7 @@ class DocxMustache
         $this->template_file_name = basename($local_template_file);
         $this->template_file = $local_template_file;
         $this->word_doc = false;
-        $this->zipper = new \Madnest\Madzipper\Madzipper();
+        $this->zipper = new \WrkLst\Madzipper\Madzipper();
 
         //name of disk for storage
         $this->storageDisk = $storageDisk;
@@ -146,7 +146,7 @@ class DocxMustache
         $pathPrefix = \Storage::disk($this->storageDisk)->path(''); // \Storage::disk($this->storageDisk)->getDriver()->getAdapter()->getPathPrefix();
         $this->zipper
             ->make($pathPrefix.$this->local_path.$this->template_file_name)
-            ->extractTo($pathPrefix.$this->local_path, [$file], \Madnest\Madzipper\Madzipper::WHITELIST);
+            ->extractTo($pathPrefix.$this->local_path, [$file], \WrkLst\Madzipper\Madzipper::WHITELIST);
     }
 
     protected function ReadOpenXmlFile($file, $type = 'file')
