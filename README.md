@@ -1,66 +1,138 @@
-![DocxMutache Logo](https://github.com/wrklst/docxmustache/raw/master/example/logo.png)
-# DocxMustache *for Laravel 10.x.*
+![DocxMustache Logo](https://github.com/wrklst/docxmustache/raw/master/example/logo.png)
 
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE) [![Quality Score](https://img.shields.io/scrutinizer/g/wrklst/docxmustache.svg?style=flat-square&b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/build-status/master)
-[![StyleCI](https://styleci.io/repos/90483440/shield?branch=master)](https://styleci.io/repos/90483440)
+# DocxMustache *for Laravel 11.x*
 
-Docx template manipulation class for Laravel 10.x, based on [mustache templating language](https://mustache.github.io). This class is still under heavy development and works more like proof of concept at the moment. Things will change quickly and might break things.
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE) [![Quality Score](https://img.shields.io/scrutinizer/g/wrklst/docxmustache.svg?style=flat-square&b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/build-status/master) [![StyleCI](https://styleci.io/repos/90483440/shield?branch=master)](https://styleci.io/repos/90483440)
+
+DocxMustache is a Laravel 11.x package for manipulating DOCX templates using the [Mustache templating language](https://mustache.github.io). It allows you to merge richly styled Word documents with data from various sources. This package is still under active development, and breaking changes may occur.
 
 ![Template Example in Word](https://github.com/wrklst/docxmustache/raw/master/example/ExampleMustacheTemplate.png)
-This package helps you to use docx files with mustache syntax as templates to merge richly styled documents with information from any data source. It can replace text and images and supports basic html styling (bold, itallic, underline).
+
+With DocxMustache, you can:
+- Replace text using Mustache syntax.
+- Embed images dynamically.
+- Support basic HTML styling (bold, italic, underline).
+
+---
 
 ## Installation
-`composer require wrklst/docxmustache`
 
-Please check depencies down below and examples folder for configuration and usage.
+Install the package via Composer:
 
-## HTML conversion
+```bash
+composer require wrklst/docxmustache
+```
 
-Current HTML conversion is basic and only supports singular runs of bold, italic and underlined text and no combination of these. It requires all values non html to be escaped with
-`htmlspecialchars($value, ENT_COMPAT, 'UTF-8');`
-and a prefix of
-`*[[DONOTESCAPE]]*`
-so the class knows not to escape the html before it is converted to openXML.
+Refer to the [Examples](#example) section and the `examples` folder for configuration and usage instructions.
 
+---
 
-## Replacing images
+## Features
 
-The image needs to be a reachable URL with a image in a supported format. The url value needs to be placed into the alt text description field of the image.
-Images will be resampled to the constraints of the placeholder image.
-The Image value needs to be formated the with pseudo tags around, such as:
-`[IMG-REPLACE]http://placehold.it/350x150[/IMG-REPLACE]`
+### HTML Conversion
+
+Basic HTML conversion is supported, including:
+- Bold (`<b>`)
+- Italic (`<i>`)
+- Underline (`<u>`)
+
+**Limitations:**
+- Does not support combined styling (e.g., bold + italic).
+- Non-HTML values must be escaped using:
+
+```php
+htmlspecialchars($value, ENT_COMPAT, 'UTF-8');
+```
+
+**Special Note:**
+To prevent unnecessary escaping of HTML, prefix the value with:
+
+```php
+*[[DONOTESCAPE]]*
+```
+
+---
+
+### Replacing Images
+
+Dynamic image replacement is supported. Follow these steps:
+
+1. Add the image URL (reachable and supported format) to the image's **alt text description** field in the DOCX template.
+2. Use pseudo-tags around the URL, like so:
+
+```text
+[IMG-REPLACE]http://placehold.it/350x150[/IMG-REPLACE]
+```
+
+**Note:** Images will be resampled to match the constraints of the placeholder image in the template.
+
+---
+
+### DOCX to PDF Conversion
+
+To enable DOCX-to-PDF conversion, install `libreoffice-common` on your server:
+
+```bash
+sudo apt install libreoffice-common
+```
+
+For Arial font support, install:
+
+```bash
+sudo apt-get install ttf-mscorefonts-installer
+```
+
+---
+
+## Dependencies
+
+### Required Packages
+- [mustache/mustache](https://packagist.org/packages/mustache/mustache)
+- [intervention/image](http://image.intervention.io)
+
+For Intervention Image, ensure you:
+1. Add the [provider and alias](http://image.intervention.io/getting_started/installation#laravel) to your app config.
+2. Install `gd` or `imagick` as required ([details here](http://image.intervention.io/getting_started/installation#laravel)).
+
+### Laravel-Specific Dependencies
+If you want to port the package to a non-Laravel environment, consider replacing:
+- **Storage and File Classes**: Based on [Flysystem](https://flysystem.thephpleague.com), can be replaced with PHP native file handling.
+- **Process Handling**: Uses `\Symfony\Component\Process\Process` for PDF conversion.
+
+---
 
 ## Example
-Please also checkout the example in the example folder to get a basic understand of how to use this class.
 
-## DOCX to PDF conversion
+Check out the `examples` folder for sample templates and usage.
 
-Conversion to PDF requires `libreoffice-common` to be installed on the server (used for conversion).
-Use `sudo apt install libreoffice-common` on your ubuntu/debian based server. Also install ttf-mscorefonts if you need support for Arial font when converting docx documents to pdf `sudo apt-get install ttf-mscorefonts-installer `
-
-## Other Dependencies
-The package is dependent on several Laravel specific functions. It could easily be ported to other frameworks or be ported to be framework agnostic. In addition to the Laravel dependency, the page uses the following packages:
-
-* [mustache/mustache](https://packagist.org/packages/mustache/mustache)
-* [intervention/image](http://image.intervention.io) (requires adding [provider and alias](http://image.intervention.io/getting_started/installation#laravel) to your app config as well as gd or imagick, [please check the image intervention webpage for details](http://image.intervention.io/getting_started/installation#laravel))
-
-Laravel specific dependencies (only relevant if ported into non Laravel environment):
-
-* [Storage and File class, based on Flysystem](https://flysystem.thephpleague.com) (for local file access, could also be replaced by phps own fopen etc methods)
-* [\Symfony\Component\Process\Process](http://symfony.com/doc/current/components/process.html) (only for PDF conversion)
+---
 
 ## Contributions
-If you would like to contribute something to this package, please feel free to make a pull request and a corresponding issue and we will be happy to review and discuss.
 
-## Why another openXML / docx template solution?
-There are some classes out there that help with writing and or changing the content of word documents, some with commercial licenses and some free. For our particular purpose we did not need most of the features many of the libraries out there have – we needed a simple solution that would allow to replace values and images and traverse through data in a easy and straightforward manner.
+Contributions are welcome! To contribute:
+1. Fork the repository.
+2. Create a pull request with your changes.
+3. Include a corresponding issue for discussion.
 
-Many of the other libraries use cloning to repeat a block with some custom templating syntax instead of using a existing template syntax. We use the usual mustache syntax, also to achieve repeating content in as many dimensions as needed.
+We’ll be happy to review and discuss your ideas!
 
-Other PHP Classes to manipulate openXML word documents:
+---
 
-* [openTBS – Tiny But Strong](http://www.tinybutstrong.com/opentbs.php)
-* [PHPWord](https://github.com/PHPOffice/PHPWord)
-* [docxtemplater pro](https://modules.docxtemplater.com) (basic opensource / free version / MIT license available as of writing; image replacing is a commercial plugin)
-* [docxpresso](http://www.docxpresso.com) (commercial)
-* [phpdocx](https://www.phpdocx.com) (commercial)
+## Why Another DOCX Templating Solution?
+
+While there are existing libraries for DOCX manipulation, they often:
+- Use proprietary or non-standard templating syntaxes.
+- Focus on complex feature sets, making them heavyweight for simple use cases.
+
+DocxMustache was designed to:
+- Use the widely adopted Mustache syntax.
+- Provide simple and intuitive value and image replacement.
+- Support repeating content in multiple dimensions.
+
+### Alternatives
+Here are other popular PHP libraries for DOCX manipulation:
+- [openTBS – Tiny But Strong](http://www.tinybutstrong.com/opentbs.php)
+- [PHPWord](https://github.com/PHPOffice/PHPWord)
+- [docxtemplater pro](https://modules.docxtemplater.com) (MIT licensed; image replacement requires a commercial plugin)
+- [docxpresso](http://www.docxpresso.com) (commercial)
+- [phpdocx](https://www.phpdocx.com) (commercial)
