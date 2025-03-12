@@ -1,10 +1,9 @@
-![DocxMustache Logo](https://github.com/wrklst/docxmustache/raw/master/example/logo.png)
-
-# DocxMustache *for Laravel 11.x*
+![DocxMutache Logo](https://github.com/wrklst/docxmustache/raw/master/example/logo.png)
+# DocxMustache *for Laravel 12.x.*
 
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE) [![Quality Score](https://img.shields.io/scrutinizer/g/wrklst/docxmustache.svg?style=flat-square&b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/build-status/master) [![StyleCI](https://styleci.io/repos/90483440/shield?branch=master)](https://styleci.io/repos/90483440)
 
-DocxMustache is a Laravel 11.x package for manipulating DOCX templates using the [Mustache templating language](https://mustache.github.io). It allows you to merge richly styled Word documents with data from various sources. This package is still under active development, and breaking changes may occur.
+Docx template manipulation class for Laravel 12.x, based on [mustache templating language](https://mustache.github.io). This class is still under heavy development and works more like proof of concept at the moment. Things will change quickly and might break things.
 
 ![Template Example in Word](https://github.com/wrklst/docxmustache/raw/master/example/ExampleMustacheTemplate.png)
 

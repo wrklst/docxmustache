@@ -6,7 +6,7 @@
         "php" : ">=8.1",
         "mustache/mustache": "^2.12",
         "intervention/image": "^2.7",
-        "wrklst/madzipper": "^1.5"
+        "madnest/madzipper": "^1.6"
     },
     "homepage" : "https://github.com/wrklst/docxmustache",
     "license": "MIT",
