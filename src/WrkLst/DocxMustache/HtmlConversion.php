@@ -12,75 +12,77 @@ class HtmlConversion
         $line_breaks = ['&lt;br /&gt;', '&lt;br/&gt;', '&lt;br&gt;', '<br />', '<br/>', '<br>'];
         $value = str_replace($line_breaks, '</w:t><w:br/><w:t xml:space="preserve">', $value);
 
-        $value = self::convertHtmlToOpenXMLTag($value, 'b');
-        $value = self::convertHtmlToOpenXMLTag($value, 'i');
-        $value = self::convertHtmlToOpenXMLTag($value, 'u');
-        $value = self::convertHtmlToOpenXMLTag($value, 'strong');
-        $value = self::convertHtmlToOpenXMLTag($value, 'em');
+        $value = self::convertHtmlToOpenXMLTag($value);
 
         return $value;
     }
 
-    public static function convertHtmlToOpenXMLTag($value, $tag = 'b')
+    public static function convertHtmlToOpenXMLTag($html, $tag = null)
     {
-        $value_array = [];
-        $run_again = false;
-        //this could be used instead if html was already escaped
-        /*
-        $bo = "&lt;";
-        $bc = "&gt;";
-        */
-        $bo = '<';
-        $bc = '>';
+        $doc = new \DOMDocument();
+        libxml_use_internal_errors(true); // suppress warnings for malformed HTML
+        $doc->loadHTML(mb_convert_encoding('<div>' . $html . '</div>', 'HTML-ENTITIES', 'UTF-8'));
+        libxml_clear_errors();
 
-        //get first BOLD
-        $tag_open_values = explode($bo.$tag.$bc, $value, 2);
+        $body = $doc->getElementsByTagName('div')->item(0);
+        $result = self::convertNodeToOpenXML($body);
 
-        if (count($tag_open_values) > 1) {
-            //save everything before the bold and close it
-            $value_array[] = $tag_open_values[0];
-            $value_array[] = '</w:t></w:r>';
+        return $result;
+    }
 
-            if ($tag == 'u') {
-                $tag_ooxml = 'u w:val="single" ';
-                $loose_formatting = '';
-            } elseif ($tag == 'b' || $tag == 'strong') {
-                $tag_ooxml = 'b ';
-                $loose_formatting = '';
-            } elseif ($tag == 'i' || $tag == 'em') {
-                $tag_ooxml = 'i ';
-                $loose_formatting = '<w:i w:val="0"/>';
+    private static function convertNodeToOpenXML(\DOMNode $node, $inheritedStyles = [])
+    {
+        $output = '';
+
+        foreach ($node->childNodes as $child) {
+            if ($child instanceof \DOMText) {
+                $text = htmlspecialchars($child->nodeValue, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                $output .= self::buildRun($text, $inheritedStyles);
+            } elseif ($child instanceof \DOMElement) {
+                $tag = strtolower($child->nodeName);
+                $newStyles = $inheritedStyles;
+
+                switch ($tag) {
+                    case 'b':
+                    case 'strong':
+                        $newStyles['b'] = true;
+                        break;
+                    case 'i':
+                    case 'em':
+                        $newStyles['i'] = true;
+                        break;
+                    case 'u':
+                        $newStyles['u'] = true;
+                        break;
+                    case 'br':
+                        $output .= '</w:t><w:br/><w:t xml:space="preserve">';
+                        continue 2; // skip child recursion
+                    default:
+                        // For unknown tags, recurse without adding formatting
+                        break;
+                }
+
+                $output .= self::convertNodeToOpenXML($child, $newStyles);
             }
-
-            //define styling parameters
-            $wrPr_open = strrpos($tag_open_values[0], '<w:rPr>');
-            $wrPr_close = strrpos($tag_open_values[0], '</w:rPr>', $wrPr_open);
-            $neutral_style = '<w:r><w:rPr>'.substr($tag_open_values[0], ($wrPr_open + 7), ($wrPr_close - ($wrPr_open + 7))).'</w:rPr><w:t xml:space="preserve">';
-            $tagged_style = '<w:r><w:rPr><w:'.$tag_ooxml.'/>'.str_replace($loose_formatting, '', substr($tag_open_values[0], ($wrPr_open + 7), ($wrPr_close - ($wrPr_open + 7)))).'</w:rPr><w:t xml:space="preserve">';
-
-            //open new text run and make it bold, include previous styling
-            $value_array[] = $tagged_style;
-            //get everything before bold close and after
-            $tag_close_values = explode($bo.'/'.$tag.$bc, $tag_open_values[1], 2);
-            //add bold text
-            $value_array[] = $tag_close_values[0];
-            //close bold run
-            $value_array[] = '</w:t></w:r>';
-            //open run for after bold
-            $value_array[] = $neutral_style;
-            $value_array[] = $tag_close_values[1];
-
-            $run_again = true;
-        } else {
-            $value_array[] = $tag_open_values[0];
         }
 
-        $value = implode('', $value_array);
+        return $output;
+    }
 
-        if ($run_again) {
-            $value = self::convertHtmlToOpenXMLTag($value, $tag);
+    private static function buildRun($text, $styles = [])
+    {
+        $rPr = '';
+
+        if (!empty($styles['b'])) {
+            $rPr .= '<w:b/>';
+        }
+        if (!empty($styles['i'])) {
+            $rPr .= '<w:i/>';
+        }
+        if (!empty($styles['u'])) {
+            $rPr .= '<w:u w:val="single"/>';
         }
 
-        return str_replace('<w:t>', '<w:t xml:space="preserve">', $value);
+        return '</w:t></w:r><w:r><w:rPr>' . $rPr . '</w:rPr><w:t xml:space="preserve">' . $text;
     }
 }
