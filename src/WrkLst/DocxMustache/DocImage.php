@@ -2,6 +2,8 @@
 
 namespace WrkLst\DocxMustache;
 
+use Illuminate\Support\Facades\Log;
+
 class DocImage
 {
     public function AllowedContentTypeImages()
@@ -22,31 +24,39 @@ class DocImage
         if (trim($url)) {
             $img_data = false;
 
-            if (function_exists('curl_init')) {
-                $ch = curl_init();
-                curl_setopt_array($ch, [
-                    CURLOPT_URL => $fullUrl,
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_TIMEOUT => 30,
-                    CURLOPT_SSL_VERIFYPEER => true,
-                    CURLOPT_USERAGENT => 'DocxMustache/1.0',
-                ]);
-                $img_data = curl_exec($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                $curlError = curl_error($ch);
-                curl_close($ch);
-
-                if ($img_data === false || $httpCode !== 200) {
-                    \Log::warning('DocxMustache: Failed to fetch image', [
-                        'url' => $fullUrl,
-                        'http_code' => $httpCode,
-                        'error' => $curlError,
+            try {
+                if (function_exists('curl_init')) {
+                    $ch = curl_init();
+                    curl_setopt_array($ch, [
+                        CURLOPT_URL => $fullUrl,
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 30,
+                        CURLOPT_SSL_VERIFYPEER => true,
+                        CURLOPT_USERAGENT => 'DocxMustache/1.0',
                     ]);
-                    $img_data = false;
+                    $img_data = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    $curlError = curl_error($ch);
+                    curl_close($ch);
+
+                    if ($img_data === false || $httpCode !== 200) {
+                        Log::warning('DocxMustache: Failed to fetch image', [
+                            'url' => $fullUrl,
+                            'http_code' => $httpCode,
+                            'error' => $curlError,
+                        ]);
+                        $img_data = false;
+                    }
+                } else {
+                    if ($img_file_handle = @fopen($fullUrl, 'rb')) {
+                        $img_data = stream_get_contents($img_file_handle);
+                        fclose($img_file_handle);
+                    }
                 }
-            } else {
+            } catch (\Exception $e) {
+                // Fallback to fopen if cURL fails unexpectedly
                 if ($img_file_handle = @fopen($fullUrl, 'rb')) {
                     $img_data = stream_get_contents($img_file_handle);
                     fclose($img_file_handle);
@@ -63,10 +73,14 @@ class DocImage
                         'mime' => $image_mime,
                     ];
                 } else {
-                    \Log::warning('DocxMustache: Unsupported image MIME type', [
-                        'url' => $fullUrl,
-                        'mime' => $image_mime,
-                    ]);
+                    try {
+                        Log::warning('DocxMustache: Unsupported image MIME type', [
+                            'url' => $fullUrl,
+                            'mime' => $image_mime,
+                        ]);
+                    } catch (\Exception $e) {
+                        // ignore logging failures
+                    }
                 }
             }
         }
