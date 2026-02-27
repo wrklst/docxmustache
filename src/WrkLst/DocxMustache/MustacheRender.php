@@ -25,18 +25,33 @@ class MustacheRender
 
     public static function TagCleaner($content)
     {
-        //kills all xml tags within curly mustache brackets
-        //this is necessary, as word might produce unnecesary xml tags inbetween curly backets.
+        // Word splits mustache tags across multiple <w:r> runs when formatting
+        // or language attributes change mid-tag. We need to merge these back.
 
-        //this regex needs either to be improved or it needs to be replace with a method that is aware of the xml
-        // as the regex can mess up the xml badly if the pattern does not coem with the expected content
-
-        return preg_replace_callback(
-            '/{{(.*?)}}/',
-            function ($match) {
-                return strip_tags($match[0]);
-            },
-            preg_replace("/(?<!{){(?!{)<\/w:t>[\s\S]*?<w:t>{/", '{{', $content)
+        // Step 1: Merge split opening braces: {</w:t>...<w:t>{ → {{
+        $content = preg_replace(
+            '/\{(?!\{)<\/w:t>[\s\S]*?<w:t[^>]*>\{/',
+            '{{',
+            $content
         );
+
+        // Step 2: Merge split closing braces: }</w:t>...<w:t>} → }}
+        $content = preg_replace(
+            '/\}(?!\})<\/w:t>[\s\S]*?<w:t[^>]*>\}/',
+            '}}',
+            $content
+        );
+
+        // Step 3: Handle mustache tags where content spans multiple XML runs.
+        // Match {{ through any intermediate XML to }} and strip XML from inner content.
+        $content = preg_replace_callback(
+            '/(\{\{)([\s\S]*?)(\}\})/',
+            function ($match) {
+                return $match[1] . strip_tags($match[2]) . $match[3];
+            },
+            $content
+        );
+
+        return $content;
     }
 }
