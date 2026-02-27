@@ -23,52 +23,74 @@ class MustacheRender
         return $m->render($mustache_template, $items);
     }
 
+    /**
+     * Clean mustache tags that Word has split across multiple <w:r> runs.
+     * Uses DOM parsing to safely shift text between <w:t> elements
+     * without removing or corrupting XML structure.
+     */
     public static function TagCleaner($content)
     {
-        // Word splits mustache tags across multiple <w:r> runs when formatting
-        // or language attributes change mid-tag. We need to reassemble them by
-        // shifting text between <w:t> elements, never removing XML structure.
+        $doc = new \DOMDocument();
+        $doc->loadXML($content);
 
-        // Step 1: Merge split opening braces {</w:t>...<w:t>{ → shift first { to second position
-        // Only across a single run boundary (no other <w:t> elements in between)
-        $content = preg_replace(
-            '/\{(?!\{)<\/w:t>((?:(?!<\/?w:t[ >])[\s\S])*?)<w:t([^>]*)>\{/',
-            '</w:t>$1<w:t$2>{{',
-            $content
-        );
+        $xpath = new \DOMXPath($doc);
+        $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+        $textNodes = $xpath->query('//w:t');
 
-        // Step 2: Merge split closing braces }</w:t>...<w:t>} → shift first } to second position
-        // Only across a single run boundary
-        $content = preg_replace(
-            '/\}(?!\})<\/w:t>((?:(?!<\/?w:t[ >])[\s\S])*?)<w:t([^>]*)>\}/',
-            '</w:t>$1<w:t$2>}}',
-            $content
-        );
+        $nodes = [];
+        for ($i = 0; $i < $textNodes->length; $i++) {
+            $nodes[] = $textNodes->item($i);
+        }
 
-        // Step 3: Handle mustache tags where tag name spans multiple XML runs.
-        // Shift text from intermediate <w:t> elements into the first one, emptying them
-        // but preserving all XML structure (runs, properties, etc.).
-        $content = preg_replace_callback(
-            '/(\{\{)([\s\S]*?)(\}\})/',
-            function ($match) {
-                // Only process if there are intermediate <w:t> elements
-                if (strpos($match[2], '<w:t') === false) {
-                    return $match[0];
+        $i = 0;
+        while ($i < count($nodes)) {
+            $text = $nodes[$i]->textContent;
+
+            if (self::hasIncompleteMustacheTag($text)) {
+                $j = $i + 1;
+                while ($j < count($nodes) && self::hasIncompleteMustacheTag($text)) {
+                    $text .= $nodes[$j]->textContent;
+                    $nodes[$j]->textContent = '';
+                    $j++;
                 }
-                $extractedText = '';
-                $modified = preg_replace_callback(
-                    '/<w:t([^>]*)>([^<]*)<\/w:t>/',
-                    function ($m) use (&$extractedText) {
-                        $extractedText .= $m[2];
-                        return '<w:t' . $m[1] . '></w:t>';
-                    },
-                    $match[2]
-                );
-                return $match[1] . $extractedText . $match[3] . $modified;
-            },
-            $content
-        );
+                $nodes[$i]->textContent = $text;
+                if (!$nodes[$i]->hasAttribute('xml:space')) {
+                    $nodes[$i]->setAttribute('xml:space', 'preserve');
+                }
+            }
 
-        return $content;
+            $i++;
+        }
+
+        return $doc->saveXML();
+    }
+
+    /**
+     * Check if text contains an incomplete mustache tag that needs
+     * content from subsequent <w:t> elements to be complete.
+     */
+    private static function hasIncompleteMustacheTag($text)
+    {
+        $len = strlen($text);
+        if ($len === 0) {
+            return false;
+        }
+
+        // Ends with a single { (potential start of {{)
+        if ($text[$len - 1] === '{' && ($len < 2 || $text[$len - 2] !== '{')) {
+            return true;
+        }
+
+        // Check for {{ without a matching }}
+        $searchFrom = 0;
+        while (($pos = strpos($text, '{{', $searchFrom)) !== false) {
+            $closePos = strpos($text, '}}', $pos + 2);
+            if ($closePos === false) {
+                return true;
+            }
+            $searchFrom = $closePos + 2;
+        }
+
+        return false;
     }
 }
