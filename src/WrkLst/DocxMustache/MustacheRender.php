@@ -28,22 +28,24 @@ class MustacheRender
         // Word splits mustache tags across multiple <w:r> runs when formatting
         // or language attributes change mid-tag. We need to merge these back.
 
-        // Step 1: Merge split opening braces: {</w:t>...<w:t>{ → {{
+        // Step 1: Merge split opening braces {</w:t>...<w:t>{ → {{
+        // Only across a single run boundary (no other <w:t> elements in between)
         $content = preg_replace(
-            '/\{(?!\{)<\/w:t>[\s\S]*?<w:t[^>]*>\{/',
+            '/\{(?!\{)<\/w:t>((?:(?!<\/?w:t[ >])[\s\S])*?)<w:t[^>]*>\{/',
             '{{',
             $content
         );
 
-        // Step 2: Merge split closing braces: }</w:t>...<w:t>} → }}
+        // Step 2: Merge split closing braces }</w:t>...<w:t>} → }}
+        // Only across a single run boundary
         $content = preg_replace(
-            '/\}(?!\})<\/w:t>[\s\S]*?<w:t[^>]*>\}/',
+            '/\}(?!\})<\/w:t>((?:(?!<\/?w:t[ >])[\s\S])*?)<w:t[^>]*>\}/',
             '}}',
             $content
         );
 
         // Step 3: Handle mustache tags where content spans multiple XML runs.
-        // Match {{ through any intermediate XML to }} and strip XML from inner content.
+        // Match {{ through any intermediate XML to the nearest }} and strip XML from inner content.
         $content = preg_replace_callback(
             '/(\{\{)([\s\S]*?)(\}\})/',
             function ($match) {
