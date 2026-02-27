@@ -25,44 +25,54 @@ class MustacheRender
 
     /**
      * Clean mustache tags that Word has split across multiple <w:r> runs.
-     * Uses DOM parsing to safely shift text between <w:t> elements
-     * without removing or corrupting XML structure.
+     * Finds <w:t> elements via regex, applies merge logic, and writes back
+     * only the changed text via substr_replace — preserving the original
+     * XML byte-for-byte everywhere else.
      */
     public static function TagCleaner($content)
     {
-        $doc = new \DOMDocument();
-        $doc->loadXML($content);
-
-        $xpath = new \DOMXPath($doc);
-        $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
-        $textNodes = $xpath->query('//w:t');
-
-        $nodes = [];
-        for ($i = 0; $i < $textNodes->length; $i++) {
-            $nodes[] = $textNodes->item($i);
+        // Find all <w:t> elements with their text and positions
+        if (!preg_match_all('/<w:t([^>]*)>([^<]*)<\/w:t>/', $content, $matches, PREG_OFFSET_CAPTURE)) {
+            return $content;
         }
 
-        $i = 0;
-        while ($i < count($nodes)) {
-            $text = $nodes[$i]->textContent;
+        // Extract raw text content (already XML-encoded, but { } are never encoded)
+        $texts = [];
+        for ($i = 0; $i < count($matches[0]); $i++) {
+            $texts[$i] = $matches[2][$i][0];
+        }
 
-            if (self::hasIncompleteMustacheTag($text)) {
+        // Apply merge logic: shift text from later elements into earlier ones
+        $newTexts = $texts;
+        $i = 0;
+        while ($i < count($newTexts)) {
+            if (self::hasIncompleteMustacheTag($newTexts[$i])) {
                 $j = $i + 1;
-                while ($j < count($nodes) && self::hasIncompleteMustacheTag($text)) {
-                    $text .= $nodes[$j]->textContent;
-                    $nodes[$j]->textContent = '';
+                while ($j < count($newTexts) && self::hasIncompleteMustacheTag($newTexts[$i])) {
+                    $newTexts[$i] .= $newTexts[$j];
+                    $newTexts[$j] = '';
                     $j++;
                 }
-                $nodes[$i]->textContent = $text;
-                if (!$nodes[$i]->hasAttribute('xml:space')) {
-                    $nodes[$i]->setAttribute('xml:space', 'preserve');
-                }
             }
-
             $i++;
         }
 
-        return $doc->saveXML();
+        // Apply changes in reverse order so offsets stay valid
+        for ($i = count($matches[0]) - 1; $i >= 0; $i--) {
+            if ($texts[$i] === $newTexts[$i]) {
+                continue;
+            }
+
+            $attrs = $matches[1][$i][0];
+            if ($newTexts[$i] !== '' && strpos($attrs, 'xml:space') === false) {
+                $attrs = ' xml:space="preserve"' . $attrs;
+            }
+
+            $replacement = '<w:t' . $attrs . '>' . $newTexts[$i] . '</w:t>';
+            $content = substr_replace($content, $replacement, $matches[0][$i][1], strlen($matches[0][$i][0]));
+        }
+
+        return $content;
     }
 
     /**
