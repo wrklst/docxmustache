@@ -5,7 +5,7 @@
     "require": {
         "php" : ">=8.1",
         "mustache/mustache": "^2.12",
-        "intervention/image": "^2.7",
+        "intervention/image": "^2.7 || ^4",
         "madnest/madzipper": "^1.6"
     },
     "homepage" : "https://github.com/wrklst/docxmustache",
