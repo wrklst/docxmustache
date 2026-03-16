@@ -2,6 +2,10 @@
 
 namespace WrkLst\DocxMustache;
 
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
+
 class DocImage
 {
     public function AllowedContentTypeImages()
@@ -42,10 +46,13 @@ class DocImage
     {
         \Storage::disk($parent->storageDisk)->put($parent->local_path.'word/media/'.$imgs[$k]['img_file_src'], $data);
 
+        $manager = ImageManager::usingDriver(Driver::class);
+        $imgPath = $parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']);
+
         //rework img to new size and jpg format
-        $img_rework = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']))->encode('jpg', 80);
+        $img_rework = $manager->decodePath($imgPath);
         if ($dpi != 72) {
-            $img_rework2 = \Image::make($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_src']))->encode('jpg', 80);
+            $img_rework2 = $manager->decodePath($imgPath);
         }
 
         $imgWidth = $img_rework->width();
@@ -70,36 +77,19 @@ class DocImage
             $h = (($imgHeight / $imgWidth) * $w);
         }
 
-        $h = null;
-
         //for getting non high dpi measurements, as the document is on 72 dpi.
-        //TODO: this should be improved. it does not really need the resampling to identify the new sizes.
-        //instead this should just be calculated, as resampling the image is too process instensive.
-        $img_rework->resize($w, $h, function($constraint) {
-            $constraint->aspectRatio();
-            $constraint->upsize();
-        });
+        $img_rework->scaleDown(width: (int) $w);
         $new_height = $img_rework->height();
         $new_width = $img_rework->width();
 
         if ($dpi != 72) {
             //for storing the image in high dpi, so it has good quality on high dpi screens
-            $img_rework2->resize(((int) $w * ($dpi / 72)), $h, function($constraint) { // make high dpi version for actual storage
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            });
-            $img_rework2->save($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
-
-        //set dpi of image to high dpi
-            /*$im = new \imagick();
-            $im->setResolution($dpi,$dpi);
-            $im->readImage($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
-            $im->writeImage($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
-            $im->clear();
-            $im->destroy();
-            */
+            $img_rework2->scaleDown(width: (int) ($w * ($dpi / 72)));
+            $img_rework2->encode(new JpegEncoder(quality: 80))
+                ->save($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
         } else {
-            $img_rework->save($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
+            $img_rework->encode(new JpegEncoder(quality: 80))
+                ->save($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
         }
 
         $parent->zipper->folder('word/media')->add($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
