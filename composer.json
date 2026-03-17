@@ -4,9 +4,9 @@
     "keywords": ["laravel", "docx", "openxml", "template", "mustache", "php"],
     "require": {
         "php" : ">=8.1",
+        "ext-zip": "*",
         "mustache/mustache": "^2.12",
-        "intervention/image": "^2.7 || ^4",
-        "madnest/madzipper": "^1.6"
+        "intervention/image": "^4"
     },
     "homepage" : "https://github.com/wrklst/docxmustache",
     "license": "MIT",

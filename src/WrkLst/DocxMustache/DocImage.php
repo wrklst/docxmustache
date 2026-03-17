@@ -92,8 +92,11 @@ class DocImage
                 ->save($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
         }
 
-        $parent->zipper->folder('word/media')->add($parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']));
-
+        $localFile = $parent->StoragePath($parent->local_path.'word/media/'.$imgs[$k]['img_file_dest']);
+        $zipPath = $parent->StoragePath($parent->local_path.$parent->template_file_name);
+        $parent->zipper->open($zipPath);
+        $parent->zipper->addFile($localFile, 'word/media/'.$imgs[$k]['img_file_dest']);
+        $parent->zipper->close();
 
         return [
             'height' => $new_height,

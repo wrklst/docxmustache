@@ -4,6 +4,7 @@ namespace WrkLst\DocxMustache;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
+use ZipArchive;
 
 //Custom DOCX template class to change content based on mustache templating engine.
 class DocxMustache
@@ -35,7 +36,7 @@ class DocxMustache
         $this->template_file_name = basename($local_template_file);
         $this->template_file = $local_template_file;
         $this->word_doc = false;
-        $this->zipper = new \Madnest\Madzipper\Madzipper;
+        $this->zipper = new ZipArchive;
 
         //name of disk for storage
         $this->storageDisk = $storageDisk;
@@ -67,7 +68,7 @@ class DocxMustache
         if ($this->useStoragePath) {
             return \Storage::disk($this->storageDisk)->path($file);
         }
-        $pathPrefix = \Storage::disk($this->storageDisk)->path(''); //\Storage::disk($this->storageDisk)->getDriver()->getAdapter()->getPathPrefix();
+        $pathPrefix = \Storage::disk($this->storageDisk)->path('');
         return $pathPrefix.$file;
     }
 
@@ -107,30 +108,37 @@ class DocxMustache
         return $path;
     }
 
+    private function openZip()
+    {
+        $path = $this->StoragePath($this->local_path.$this->template_file_name);
+        if ($this->zipper->open($path) !== true) {
+            throw new Exception('Cannot open zip: '.$path);
+        }
+    }
+
     public function getAllFilesFromDocx()
     {
+        $this->openZip();
         $filelist = [];
-        $fileWhitelist = $this->fileWhitelist;
-        $this->zipper
-            ->make($this->StoragePath($this->local_path.$this->template_file_name))
-            ->getRepository()->each(function ($file, $stats) use ($fileWhitelist, &$filelist) {
-                foreach ($fileWhitelist as $pattern) {
-                    if (fnmatch($pattern, $file)) {
-                        $filelist[] = $file;
-                    }
+        for ($i = 0; $i < $this->zipper->numFiles; $i++) {
+            $name = $this->zipper->getNameIndex($i);
+            foreach ($this->fileWhitelist as $pattern) {
+                if (fnmatch($pattern, $name)) {
+                    $filelist[] = $name;
                 }
-            });
+            }
+        }
+        $this->zipper->close();
         $this->filelist = $filelist;
     }
 
     public function doInplaceMustache($file)
     {
-        $tempFileContent = $this->zipper
-                            ->make($this->StoragePath($this->local_path.$this->template_file_name))
-                            ->getFileContent($file);
+        $this->openZip();
+        $tempFileContent = $this->zipper->getFromName($file);
         $tempFileContent = MustacheRender::render($this->items, $tempFileContent);
         $tempFileContent = HtmlConversion::convert($tempFileContent);
-        $this->zipper->addString($file, $tempFileContent);
+        $this->zipper->addFromString($file, $tempFileContent);
         $this->zipper->close();
     }
 
@@ -143,10 +151,11 @@ class DocxMustache
 
     protected function exctractOpenXmlFile($file)
     {
-        $pathPrefix = \Storage::disk($this->storageDisk)->path(''); // \Storage::disk($this->storageDisk)->getDriver()->getAdapter()->getPathPrefix();
-        $this->zipper
-            ->make($pathPrefix.$this->local_path.$this->template_file_name)
-            ->extractTo($pathPrefix.$this->local_path, [$file], \Madnest\Madzipper\Madzipper::WHITELIST);
+        $pathPrefix = \Storage::disk($this->storageDisk)->path('');
+        $zipPath = $pathPrefix.$this->local_path.$this->template_file_name;
+        $this->zipper->open($zipPath);
+        $this->zipper->extractTo($pathPrefix.$this->local_path, [$file]);
+        $this->zipper->close();
     }
 
     protected function ReadOpenXmlFile($file, $type = 'file')
@@ -172,13 +181,9 @@ class DocxMustache
         \Storage::disk($this->storageDisk)
             ->put($this->local_path.$file, $content);
         //add new content to word doc
-        if ($folder) {
-            $this->zipper->folder($folder)
-                ->add($this->StoragePath($this->local_path.$file));
-        } else {
-            $this->zipper
-                ->add($this->StoragePath($this->local_path.$file));
-        }
+        $this->openZip();
+        $this->zipper->addFile($this->StoragePath($this->local_path.$file), $file);
+        $this->zipper->close();
     }
 
     protected function SaveOpenXmlObjectToFile($xmlObject, $file, $folder)
@@ -207,7 +212,6 @@ class DocxMustache
         $this->Log('Compact Template with Data');
 
         $this->SaveOpenXmlFile('word/document.xml', 'word', $this->word_doc);
-        $this->zipper->close();
     }
 
     protected function AddContentType($imageCt = 'jpeg')
@@ -290,16 +294,18 @@ class DocxMustache
     {
         //TODO: check if the same img is used at a different position int he file as well, as otherwise broken images are produced.
         //iterate through replaced images and clean rels files from them
+        $this->openZip();
         foreach ($imgs_replaced as $img_replaced) {
             $i = 0;
             foreach ($rels_file as $rel) {
                 if ((string) $rel->attributes()['Id'] == $img_replaced) {
-                    $this->zipper->remove('word/'.(string) $rel->attributes()['Target']);
+                    $this->zipper->deleteName('word/'.(string) $rel->attributes()['Target']);
                     unset($rels_file->Relationship[$i]);
                 }
                 $i++;
             }
         }
+        $this->zipper->close();
     }
 
     protected function InsertImages($ns, &$imgs, &$rels_file, &$main_file, $dpi)
