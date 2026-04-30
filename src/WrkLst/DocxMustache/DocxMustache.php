@@ -313,6 +313,10 @@ class DocxMustache
         $docimage = new DocImage();
         $allowed_imgs = $docimage->AllowedContentTypeImages();
         $image_i = 1;
+        // Drawing nodes don't change in count or order during this loop (only their attribute
+        // values are mutated), so resolve the xpath once instead of re-running it for every
+        // image and every check inside the inner loop.
+        $drawings = $main_file->xpath('//w:drawing') ?: [];
         //iterate through replacable images
         foreach ($imgs as $k=>$img) {
             $this->Log('Merge Images into Template - '.round($image_i / count($imgs) * 100).'%');
@@ -328,31 +332,38 @@ class DocxMustache
                 $sxe->addAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image');
                 $sxe->addAttribute('Target', 'media/'.$imgs[$k]['img_file_dest']);
 
-                foreach ($main_file->xpath('//w:drawing') as $k=>$drawing) {
-                    if (null !== $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
-                        ->graphic->graphicData->children($ns['pic'])->pic->blipFill &&
-                        $img['id'] == $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
-                        ->graphic->graphicData->children($ns['pic'])->pic->blipFill->children($ns['a'])
-                        ->blip->attributes($ns['r'])['embed']) {
-                        $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
-                            ->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])
-                            ->xfrm->ext->attributes()['cx'] = $resampled_img['width_emus'];
-                        $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->children($ns['a'])
-                            ->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])
-                            ->xfrm->ext->attributes()['cy'] = $resampled_img['height_emus'];
-                        //anchor images
-                        if (isset($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor)) {
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()['cx'] = $resampled_img['width_emus'];
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->anchor->extent->attributes()['cy'] = $resampled_img['height_emus'];
-                        }
-                        //inline images
-                        elseif (isset($main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline)) {
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()['cx'] = $resampled_img['width_emus'];
-                            $main_file->xpath('//w:drawing')[$k]->children($ns['wp'])->inline->extent->attributes()['cy'] = $resampled_img['height_emus'];
-                        }
+                foreach ($drawings as $drawing) {
+                    $wp = $drawing->children($ns['wp']);
+                    $blipFill = $wp->children($ns['a'])
+                        ->graphic->graphicData->children($ns['pic'])->pic->blipFill;
 
-                        break;
+                    if ($blipFill === null) {
+                        continue;
                     }
+
+                    $embed = $blipFill->children($ns['a'])->blip->attributes($ns['r'])['embed'];
+                    if ($img['id'] != $embed) {
+                        continue;
+                    }
+
+                    $ext = $wp->children($ns['a'])
+                        ->graphic->graphicData->children($ns['pic'])->pic->spPr->children($ns['a'])
+                        ->xfrm->ext;
+                    $ext->attributes()['cx'] = $resampled_img['width_emus'];
+                    $ext->attributes()['cy'] = $resampled_img['height_emus'];
+
+                    //anchor images
+                    if (isset($wp->anchor)) {
+                        $wp->anchor->extent->attributes()['cx'] = $resampled_img['width_emus'];
+                        $wp->anchor->extent->attributes()['cy'] = $resampled_img['height_emus'];
+                    }
+                    //inline images
+                    elseif (isset($wp->inline)) {
+                        $wp->inline->extent->attributes()['cx'] = $resampled_img['width_emus'];
+                        $wp->inline->extent->attributes()['cy'] = $resampled_img['height_emus'];
+                    }
+
+                    break;
                 }
             }
             $image_i++;
