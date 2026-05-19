@@ -13,10 +13,17 @@ class MustacheRender
         $m = new \Mustache_Engine(['escape' => function ($value) {
             if (! is_string($value)) {
                 // Mustache hands the escape callback whatever a tag resolves to.
-                // Scalars/null get coerced to string; an array means a tag was
-                // pointed at non-scalar data (e.g. a list used without a section),
-                // so render it blank instead of crashing the whole document job.
-                $value = is_scalar($value) ? (string) $value : '';
+                // Scalars/null get coerced to string. An array means a tag was
+                // pointed at non-scalar data (e.g. a list used without a section);
+                // render a visible marker listing the array's first keys so the
+                // broken template tag is obvious in the generated document.
+                if (is_array($value)) {
+                    $keys = array_slice(array_keys($value), 0, 5);
+                    $value = 'Array('.implode(', ', $keys)
+                        .(count($value) > 5 ? ', ...' : '').') Value used';
+                } else {
+                    $value = is_scalar($value) ? (string) $value : '';
+                }
             }
 
             if (str_replace('*[[DONOTESCAPE]]*', '', $value) != $value) {
