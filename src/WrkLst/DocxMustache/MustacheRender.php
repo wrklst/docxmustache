@@ -11,6 +11,14 @@ class MustacheRender
         }
 
         $m = new \Mustache_Engine(['escape' => function ($value) {
+            if (! is_string($value)) {
+                // Mustache hands the escape callback whatever a tag resolves to.
+                // Scalars/null get coerced to string; an array means a tag was
+                // pointed at non-scalar data (e.g. a list used without a section),
+                // so render it blank instead of crashing the whole document job.
+                $value = is_scalar($value) ? (string) $value : '';
+            }
+
             if (str_replace('*[[DONOTESCAPE]]*', '', $value) != $value) {
                 $value = str_replace('&', '&amp;', $value);
 
