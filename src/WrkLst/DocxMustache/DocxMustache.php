@@ -506,7 +506,7 @@ class DocxMustache
             $valid = true;
 
             //check if path starts with storage path
-            if (! starts_with($path, storage_path())) {
+            if (! str_starts_with($path, storage_path())) {
                 $valid = false;
             }
             $mode = 'path';
