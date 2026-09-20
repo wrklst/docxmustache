@@ -9,25 +9,26 @@ class docxMustacheExampleController extends Controller
 {
     public function index(Request $request)
     {
-        //copy the example doc file into your storage directory or corret this path
+        //copy the example doc file and logo.png into your storage directory or corret these paths
         $local_template_file = 'example_template.docx';
+        $local_image = storage_path('app/logo.png');
 
         //define date to be replaced
         $data = [
             [
                 'name'     => 'Someone Other',
                 'captions' => '*[[DONOTESCAPE]]*<b>something bold</b><br />and so on',
-                'img_url'  => '[IMG-REPLACE]http://placehold.it/350x150[/IMG-REPLACE]',
+                'img_url'  => '[LOCAL_IMG_REPLACE]'.$local_image.'[/LOCAL_IMG_REPLACE]',
             ],
             [
                 'name'     => 'Person X',
                 'captions' => '*[[DONOTESCAPE]]*<b>something bold</b><br />and so on',
-                'img_url'  => '[IMG-REPLACE]http://placehold.it/350x150[/IMG-REPLACE]',
+                'img_url'  => '[LOCAL_IMG_REPLACE]'.$local_image.'[/LOCAL_IMG_REPLACE]',
             ],
             [
                 'name'     => 'Person Y',
                 'captions' => '*[[DONOTESCAPE]]*<b>something bold</b><br />and so on',
-                'img_url'  => '[IMG-REPLACE]http://placehold.it/350x150[/IMG-REPLACE]',
+                'img_url'  => '[LOCAL_IMG_REPLACE]'.$local_image.'[/LOCAL_IMG_REPLACE]',
             ],
         ];
 

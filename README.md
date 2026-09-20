@@ -56,12 +56,14 @@ To prevent unnecessary escaping of HTML, prefix the value with:
 
 Dynamic image replacement is supported. Follow these steps:
 
-1. Add the image URL (reachable and supported format) to the image's **alt text description** field in the DOCX template.
-2. Use pseudo-tags around the URL, like so:
+1. Add the image source (supported format) to the image's **alt text description** field in the DOCX template.
+2. Use pseudo-tags around it. The path must be absolute and inside `storage_path()`:
 
 ```text
-[IMG-REPLACE]http://placehold.it/350x150[/IMG-REPLACE]
+[LOCAL_IMG_REPLACE]/var/www/app/storage/app/logo.png[/LOCAL_IMG_REPLACE]
 ```
+
+   Images can also be fetched over HTTP by putting a URL of your own inside `[IMG-REPLACE]` / `[/IMG-REPLACE]` instead.
 
 **Note:** Images will be resampled to match the constraints of the placeholder image in the template.
 
