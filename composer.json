@@ -2,14 +2,7 @@
     "name": "wrklst/docxmustache",
     "description": "docx template manipulation class, based on mustache templating language",
     "keywords": ["laravel", "docx", "openxml", "template", "mustache", "php"],
-    "require": {
-        "php" : "^8.2",
-        "ext-zip": "*",
-        "illuminate/support": "^12.0|^13.0",
-        "mustache/mustache": "^2.12",
-        "intervention/image": "^4"
-    },
-    "homepage" : "https://github.com/wrklst/docxmustache",
+    "homepage": "https://github.com/wrklst/docxmustache",
     "license": "MIT",
     "authors": [
         {
@@ -17,10 +10,36 @@
             "email": "tobias@wrklst.art"
         }
     ],
-    "autoload" : {
-		"psr-0" : {
-			"WrkLst\\DocxMustache" : "src/"
-		}
-	},
-    "minimum-stability": "dev"
+    "require": {
+        "php": "^8.3",
+        "ext-fileinfo": "*",
+        "ext-gd": "*",
+        "ext-simplexml": "*",
+        "ext-zip": "*",
+        "illuminate/filesystem": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0",
+        "intervention/image": "^4",
+        "mustache/mustache": "^2.12|^3.0",
+        "symfony/process": "^7.0|^8.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^11.5|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WrkLst\\DocxMustache\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WrkLst\\DocxMustache\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    }
 }
