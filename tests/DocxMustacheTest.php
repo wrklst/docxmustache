@@ -115,6 +115,19 @@ class DocxMustacheTest extends TestCase
         $this->assertFalse($this->part($path, 'word/_rels/footer1.xml.rels'));
     }
 
+    public function test_document_without_relationships(): void
+    {
+        $this->template('norels.docx', ['word/document.xml' => $this->document($this->picture('{{logo}}'))]);
+        $zip = new \ZipArchive;
+        $zip->open($this->storage.'/app/private/app/norels.docx');
+        $zip->deleteName('word/_rels/document.xml.rels');
+        $zip->close();
+
+        $docx = $this->execute(['logo' => $this->local()], 'norels.docx');
+
+        $this->assertStringContainsString('Id="wrklstId1"', $this->part($this->path($docx), 'word/_rels/document.xml.rels'));
+    }
+
     public function test_working_directories_are_cleaned_up_after_48_hours(): void
     {
         $this->template('example_template.docx');
