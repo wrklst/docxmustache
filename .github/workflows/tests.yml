@@ -1,0 +1,81 @@
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # weekly, to notice when a new release of Laravel or another dependency breaks the package
+    - cron: '0 6 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }} / ${{ matrix.dependencies }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+        laravel: ['12', '13']
+        dependencies: [highest]
+        include:
+          - php: '8.3'
+            laravel: '12'
+            dependencies: lowest
+          - php: '8.3'
+            laravel: '13'
+            dependencies: lowest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: fileinfo, gd, simplexml, zip
+          coverage: none
+
+      - name: Install dependencies
+        run: >
+          composer update --prefer-dist --no-interaction --no-progress
+          --with "laravel/framework:^${{ matrix.laravel }}.0"
+          ${{ matrix.dependencies == 'lowest' && '--prefer-lowest' || '' }}
+
+      - name: Run tests
+        run: vendor/bin/phpunit
+
+  # the generated document, opened and converted by a real office suite
+  libreoffice:
+    name: PDF conversion with LibreOffice
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: fileinfo, gd, simplexml, zip
+          coverage: none
+
+      - name: Install LibreOffice
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer
+
+      - name: Install dependencies
+        run: composer validate --strict && composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Run tests
+        run: vendor/bin/phpunit
+        env:
+          REQUIRE_LIBREOFFICE: 1
