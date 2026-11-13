@@ -30,9 +30,9 @@ class HtmlConversion
     {
         // OpenXML run property of the tag, and the property of the surrounding run it overrides
         [$tag_ooxml, $loose_formatting] = match ($tag) {
-            'u'           => ['u w:val="single" ', ''],
-            'i', 'em'     => ['i ', '<w:i w:val="0"/>'],
-            default       => ['b ', ''],
+            'u' => ['u w:val="single" ', ''],
+            'i', 'em' => ['i ', '<w:i w:val="0"/>'],
+            default => ['b ', ''],
         };
 
         while (count($open = explode('<'.$tag.'>', $value, 2)) > 1) {

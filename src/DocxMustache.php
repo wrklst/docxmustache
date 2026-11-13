@@ -21,26 +21,37 @@ class DocxMustache
     private const EMPTY_RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'."\n".'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>';
 
     private const IMAGE_TAGS = [
-        'url'  => ['[IMG-REPLACE]', '[/IMG-REPLACE]'],
+        'url' => ['[IMG-REPLACE]', '[/IMG-REPLACE]'],
         'path' => ['[LOCAL_IMG_REPLACE]', '[/LOCAL_IMG_REPLACE]'],
     ];
 
     public $items;
+
     public $word_doc;
+
     public $template_file_name;
+
     public $template_file;
+
     public $local_path;
+
     public $storageDisk;
+
     public $storagePathPrefix;
+
     public $useStoragePath = false;
+
     public $zipper;
+
     public $imageManipulation;
+
     public $verbose;
 
     /** Hours after which the working directories of earlier runs are deleted. Null keeps them forever. */
     public $tmpDirLifetime;
 
     private $filelist = [];
+
     private $fileWhitelist = [
         'word/document.xml',
         'word/endnotes.xml',
@@ -50,11 +61,11 @@ class DocxMustache
     ];
 
     /**
-     * @param  array   $items                data for the mustache tags
+     * @param  array  $items  data for the mustache tags
      * @param  string  $local_template_file  template, relative to $storagePathPrefix on the disk
-     * @param  string  $storageDisk          name of a local filesystem disk
-     * @param  string  $storagePathPrefix    prefix within that disk
-     * @param  string  $imageManipulation    appended to image urls, e.g. '&w=1800'
+     * @param  string  $storageDisk  name of a local filesystem disk
+     * @param  string  $storagePathPrefix  prefix within that disk
+     * @param  string  $imageManipulation  appended to image urls, e.g. '&w=1800'
      * @param  int|float|null  $tmpDirLifetime  hours to keep the working directories of earlier runs, null for ever
      */
     public function __construct($items, $local_template_file, $storageDisk = 'local', $storagePathPrefix = 'app/', $imageManipulation = '', $tmpDirLifetime = 48)
@@ -388,10 +399,10 @@ class DocxMustache
 
             if ($tag['valid']) {
                 $images[] = [
-                    'part'         => $part,
-                    'ns'           => $ns,
-                    'drawing'      => $wp,
-                    'source'       => $tag['mode'] == 'url' ? $tag['url'] : $tag['path'],
+                    'part' => $part,
+                    'ns' => $ns,
+                    'drawing' => $wp,
+                    'source' => $tag['mode'] == 'url' ? $tag['url'] : $tag['path'],
                     'manipulation' => $tag['mode'] == 'url' ? $this->imageManipulation : '',
                 ];
             }
@@ -467,9 +478,9 @@ class DocxMustache
 
         $return .= match ($error->level) {
             LIBXML_ERR_WARNING => "Warning $error->code: ",
-            LIBXML_ERR_ERROR   => "Error $error->code: ",
-            LIBXML_ERR_FATAL   => "Fatal Error $error->code: ",
-            default            => '',
+            LIBXML_ERR_ERROR => "Error $error->code: ",
+            LIBXML_ERR_FATAL => "Fatal Error $error->code: ",
+            default => '',
         };
 
         $return .= trim($error->message).
@@ -517,19 +528,19 @@ class DocxMustache
             }
 
             return [
-                'mode'  => $mode,
-                'url'   => $mode == 'url' ? trim($value) : '',
-                'path'  => $mode == 'path' ? trim($value) : '',
-                'rest'  => trim(substr($string, 0, $open).substr($string, $close + strlen($end))),
+                'mode' => $mode,
+                'url' => $mode == 'url' ? trim($value) : '',
+                'path' => $mode == 'path' ? trim($value) : '',
+                'rest' => trim(substr($string, 0, $open).substr($string, $close + strlen($end))),
                 'valid' => $valid,
             ];
         }
 
         return [
-            'mode'  => 'nothing',
-            'url'   => '',
-            'path'  => '',
-            'rest'  => trim(str_replace(array_merge(...array_values(self::IMAGE_TAGS)), '', $string)),
+            'mode' => 'nothing',
+            'url' => '',
+            'path' => '',
+            'rest' => trim(str_replace(array_merge(...array_values(self::IMAGE_TAGS)), '', $string)),
             'valid' => false,
         ];
     }

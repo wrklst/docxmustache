@@ -18,10 +18,10 @@ class DocImage
     public function allowedContentTypeImages()
     {
         return [
-            'image/gif'  => '.gif',
+            'image/gif' => '.gif',
             'image/jpeg' => '.jpeg',
-            'image/png'  => '.png',
-            'image/bmp'  => '.bmp',
+            'image/png' => '.png',
+            'image/bmp' => '.bmp',
         ];
     }
 
@@ -87,10 +87,10 @@ class DocImage
         }
 
         return [
-            'data'        => (string) $image->encode(new JpegEncoder(quality: 80)),
-            'width'       => $width,
-            'height'      => $height,
-            'width_emus'  => (int) ($width * self::EMUS_PER_PIXEL),
+            'data' => (string) $image->encode(new JpegEncoder(quality: 80)),
+            'width' => $width,
+            'height' => $height,
+            'width_emus' => (int) ($width * self::EMUS_PER_PIXEL),
             'height_emus' => (int) ($height * self::EMUS_PER_PIXEL),
         ];
     }
