@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 
 class docxMustacheExampleController extends Controller
 {
     public function index(Request $request)
     {
-        //copy the example doc file and logo.png into your storage directory or corret these paths
+        //copy example_template.docx to temp/ on your local disk (storage/app/private/temp/ by default)
+        //and logo.png to storage/app/, or correct these paths
         $local_template_file = 'example_template.docx';
         $local_image = storage_path('app/logo.png');
 

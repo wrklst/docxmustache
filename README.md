@@ -1,7 +1,7 @@
 ![DocxMutache Logo](https://github.com/wrklst/docxmustache/raw/master/example/logo.png)
 # DocxMustache *for Laravel 12.x and 13.x*
 
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE) [![Quality Score](https://img.shields.io/scrutinizer/g/wrklst/docxmustache.svg?style=flat-square&b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/build-status/master) [![StyleCI](https://styleci.io/repos/90483440/shield?branch=master)](https://styleci.io/repos/90483440)
+[![Tests](https://github.com/wrklst/docxmustache/actions/workflows/tests.yml/badge.svg)](https://github.com/wrklst/docxmustache/actions/workflows/tests.yml) [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE) [![Quality Score](https://img.shields.io/scrutinizer/g/wrklst/docxmustache.svg?style=flat-square&b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/wrklst/docxmustache/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wrklst/docxmustache/build-status/master) [![StyleCI](https://styleci.io/repos/90483440/shield?branch=master)](https://styleci.io/repos/90483440)
 
 Docx template manipulation class for Laravel 12.x and 13.x, based on [mustache templating language](https://mustache.github.io). This class is still under heavy development and works more like proof of concept at the moment. Things will change quickly and might break things.
 
@@ -22,7 +22,32 @@ Install the package via Composer:
 composer require wrklst/docxmustache
 ```
 
-Refer to the [Examples](#example) section and the `examples` folder for configuration and usage instructions.
+## Usage
+
+```php
+use WrkLst\DocxMustache\DocxMustache;
+
+// the template is read from <storagePathPrefix><template> on the given (local) disk
+$docx = new DocxMustache(['items' => $items], 'example_template.docx', storageDisk: 'local', storagePathPrefix: 'app/');
+$docx->execute();          // execute(144) stores images with more pixels for high resolution screens
+
+$path = $docx->storagePath($docx->local_path.$docx->template_file_name); // the generated docx
+$pdf = $docx->saveAsPdf(); // optional, needs LibreOffice
+```
+
+Each run writes into its own working directory `<storagePathPrefix>DocxMustache/<unique id>/`.
+
+### Cleanup
+
+Every run first deletes the working directories of earlier runs that are older than 48 hours, **including the documents generated in them**. Move a result away if you need it longer, or change the lifetime (in hours):
+
+```php
+$docx = new DocxMustache($data, 'template.docx', tmpDirLifetime: 2);
+$docx->tmpDirLifetime = 0.5;  // or as a property, before execute()
+$docx->tmpDirLifetime = null; // never delete anything
+```
+
+See the `example` folder for a template and a controller.
 
 ---
 
@@ -31,24 +56,21 @@ Refer to the [Examples](#example) section and the `examples` folder for configur
 ### HTML Conversion
 
 Basic HTML conversion is supported, including:
-- Bold (`<b>`)
-- Italic (`<i>`)
+- Bold (`<b>`, `<strong>`)
+- Italic (`<i>`, `<em>`)
 - Underline (`<u>`)
+- Line breaks (`<br>`)
 
-**Limitations:**
-- Does not support combined styling (e.g., bold + italic).
-- Non-HTML values must be escaped using:
-
-```php
-htmlspecialchars($value, ENT_COMPAT, 'UTF-8');
-```
-
-**Special Note:**
-To prevent unnecessary escaping of HTML, prefix the value with:
+Values are escaped by default, so HTML in them shows up as text. To have a value treated as HTML, prefix it with:
 
 ```php
 *[[DONOTESCAPE]]*
 ```
+
+**Limitations:**
+- Tags are lowercase, without attributes, and have to be closed.
+- Styles combine only when the tags are nested (`<b>bold <i>and italic</i></b>`).
+- Everything else in such a value has to be valid XML: escape text with `htmlspecialchars($value, ENT_COMPAT, 'UTF-8')`.
 
 ---
 
@@ -65,7 +87,11 @@ Dynamic image replacement is supported. Follow these steps:
 
    Images can also be fetched over HTTP by putting a URL of your own inside `[IMG-REPLACE]` / `[/IMG-REPLACE]` instead.
 
-**Note:** Images will be resampled to match the constraints of the placeholder image in the template.
+**Notes:**
+- Images will be resampled to match the constraints of the placeholder image in the template and stored as JPEG. GIF, JPEG, PNG and BMP sources are supported.
+- If an image cannot be loaded, the placeholder image stays.
+- Pictures are replaced in the main document, headers, footers, footnotes and endnotes.
+- The picture has to be stored the way current Word versions do (DrawingML). Pictures in documents converted from the old `.doc` format (VML) are ignored: insert the picture again in a `.docx`.
 
 ---
 
@@ -88,17 +114,13 @@ sudo apt-get install ttf-mscorefonts-installer
 ## Dependencies
 
 ### Requirements
-- PHP 8.2 or newer
+- PHP 8.3 or newer (required by intervention/image 4)
 - Laravel 12.x or 13.x (`illuminate/support`)
-- The `zip` PHP extension
+- The `zip`, `gd`, `simplexml` and `fileinfo` PHP extensions
 
 ### Required Packages
-- [mustache/mustache](https://packagist.org/packages/mustache/mustache)
-- [intervention/image](http://image.intervention.io)
-
-For Intervention Image, ensure you:
-1. Add the [provider and alias](http://image.intervention.io/getting_started/installation#laravel) to your app config.
-2. Install `gd` or `imagick` as required ([details here](http://image.intervention.io/getting_started/installation#laravel)).
+- [mustache/mustache](https://packagist.org/packages/mustache/mustache) 2.x or 3.x
+- [intervention/image](https://image.intervention.io) 4.x, used with its GD driver. No provider or alias is needed.
 
 ### Laravel-Specific Dependencies
 If you want to port the package to a non-Laravel environment, consider replacing:
@@ -109,7 +131,16 @@ If you want to port the package to a non-Laravel environment, consider replacing
 
 ## Example
 
-Check out the `examples` folder for sample templates and usage.
+Check out the `example` folder for a sample template and controller.
+
+---
+
+## Testing
+
+```bash
+composer install
+composer test
+```
 
 ---
 
