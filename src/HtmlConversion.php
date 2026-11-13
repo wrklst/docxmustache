@@ -42,7 +42,7 @@ class HtmlConversion
             // styling of the run the tag sits in
             $wrPr_open = strrpos($before, '<w:rPr>');
             $wrPr_close = strrpos($before, '</w:rPr>', $wrPr_open);
-            $style = substr($before, ($wrPr_open + 7), ($wrPr_close - ($wrPr_open + 7)));
+            $style = substr($before, $wrPr_open + 7, $wrPr_close - ($wrPr_open + 7));
 
             $value = $before
                 // close the run, open a styled one for the tagged text
