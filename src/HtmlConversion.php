@@ -39,10 +39,7 @@ class HtmlConversion
             [$before, $rest] = $open;
             $close = explode('</'.$tag.'>', $rest, 2);
 
-            // styling of the run the tag sits in
-            $wrPr_open = strrpos($before, '<w:rPr>');
-            $wrPr_close = strrpos($before, '</w:rPr>', $wrPr_open);
-            $style = substr($before, $wrPr_open + 7, $wrPr_close - ($wrPr_open + 7));
+            $style = self::runStyle($before);
 
             $value = $before
                 // close the run, open a styled one for the tagged text
@@ -56,5 +53,22 @@ class HtmlConversion
         }
 
         return str_replace('<w:t>', self::TEXT_RUN_OPEN, $value);
+    }
+
+    /**
+     * Run properties of the run that is open at the end of $xml, '' if it has none.
+     * Properties of earlier runs or of the paragraph do not count.
+     */
+    private static function runStyle(string $xml): string
+    {
+        $run = max(strrpos($xml, '<w:r>'), strrpos($xml, '<w:r '));
+        $open = strrpos($xml, '<w:rPr>');
+        if ($open === false || $open < (int) $run) {
+            return '';
+        }
+
+        $close = strpos($xml, '</w:rPr>', $open);
+
+        return $close === false ? '' : substr($xml, $open + 7, $close - $open - 7);
     }
 }

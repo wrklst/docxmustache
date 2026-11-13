@@ -332,7 +332,7 @@ class DocxMustache
 
             $rels = [];
             if (isset($documents[self::MAIN_DOCUMENT])) {
-                $rels[self::MAIN_DOCUMENT] = $this->readXmlPart($this->relsName(self::MAIN_DOCUMENT));
+                $rels[self::MAIN_DOCUMENT] = $this->readXmlPart($this->relsName(self::MAIN_DOCUMENT), self::EMPTY_RELS);
             }
 
             $parts = $this->addContentType('jpeg') + $this->insertImages($images, $rels, $dpi);

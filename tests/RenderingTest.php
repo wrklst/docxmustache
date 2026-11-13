@@ -116,6 +116,28 @@ class RenderingTest extends TestCase
         );
     }
 
+    public function test_style_is_taken_from_the_run_of_the_tag_only(): void
+    {
+        $plain = '<w:r><w:t xml:space="preserve">';
+        $bold = '<w:r><w:rPr><w:b /></w:rPr><w:t xml:space="preserve">';
+        $end = '</w:t></w:r>';
+
+        // an earlier run and the paragraph have properties, the run of the tag has none
+        $before = '<w:p><w:pPr><w:rPr><w:sz w:val="40"/></w:rPr></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">earlier'.$end;
+        foreach (['<w:r>', '<w:r w:rsidR="00BF1DDA">'] as $run) {
+            $this->assertSame(
+                $before.$run.'<w:t xml:space="preserve">a '.$end.$bold.'b'.$end.'<w:r><w:rPr></w:rPr><w:t xml:space="preserve"> c'.$end.'</w:p>',
+                HtmlConversion::convert($before.$run.'<w:t>a <b>b</b> c'.$end.'</w:p>')
+            );
+        }
+
+        // no run properties anywhere
+        $this->assertSame(
+            $plain.'a '.$end.$bold.'b'.$end.'<w:r><w:rPr></w:rPr><w:t xml:space="preserve"> c'.$end,
+            substr(HtmlConversion::convert(str_repeat('<w:p/>', 20).'<w:r><w:t>a <b>b</b> c'.$end), 120)
+        );
+    }
+
     public function test_unclosed_html_tag_does_not_raise(): void
     {
         $this->assertStringContainsString('never closed', HtmlConversion::convert(self::RUN.'x <b>never closed</w:t></w:r>'));
